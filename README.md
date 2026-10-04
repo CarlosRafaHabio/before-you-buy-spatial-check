@@ -8,7 +8,7 @@ Python 3.12+, biblioteca padrão, sem dependências, rede, modelos, banco ou fro
 Engine version: `0.3.0` (ciclo de hardening). Geometria V0 preservada.
 **Licença: [Apache-2.0](LICENSE). Copyright (c) 2026 Carlos Rafael.**
 
-Distribuição de fontes em preparação; API V0 experimental, sem promessa de
+Distribuição pública de fontes disponível neste repositório; API V0 experimental, sem promessa de
 compatibilidade entre versões. O núcleo é independente de qualquer plataforma.
 Capafy é somente um consumidor futuro possível; não há dependência ou integração
 Capafy implementada. Outros projetos podem assumir o papel de host.
@@ -20,14 +20,14 @@ raiz desta árvore, onde estão `spatial_check/`, `schemas/` e `examples/`; os i
 funcionam a partir dessa raiz. Não existe pacote publicado, `pip install` suportado,
 build configurado ou distribuição PyPI neste candidato.
 
-Para consumir em outro projeto, disponibilize a pasta `spatial_check/` no caminho
-de imports desse projeto, respeitando a licença Apache-2.0. Consumidores que usam os
+Para consumir em outro projeto, disponibilize a pasta `spatial_check/` no caminho de
+imports desse projeto, respeitando a licença Apache-2.0. Consumidores que usam os
 schemas devem disponibilizar também `schemas/`. Packaging será uma decisão separada.
 
 As obrigações do host estão em `HOST_GUIDE.md`; a superfície suportada está em
 `PUBLIC_API.md`. `TESTS.md` separa regressão do core, Consumer Contract e Host Harness.
-O milestone atual registra 218 testes aprovados; `TEST_REPORT.md` conserva os
-milestones anteriores. Testes aprovados não certificam plataforma, medida ou compra.
+O milestone atual registra 218 testes aprovados; `TEST_REPORT.md` conserva os milestones anteriores.
+Testes aprovados não certificam plataforma, medida ou compra.
 
 ## Executar
 
@@ -174,8 +174,8 @@ Não informado = nenhum teste de clearance e nenhuma garantia sobre operação d
   espaços, expoentes, `NaN`, `Infinity`, bool ou inferência de unidade.
 - A exceção de segurança é um único separador seguido de três algarismos, com
   prefixo não zero de 1–3 algarismos: `"1.200"`, `"1,200"`, `"12.345"`, inclusive
-  negativos e prefixos com zeros, são ambíguos e recusados por `confirm()` antes
-  de emitir recibo. Não são convertidos nem para 1200 nem para 1.2.
+  negativos e prefixos com zeros, são ambíguos e recusados por `confirm()` antes de
+  emitir recibo. Não são convertidos nem para 1200 nem para 1.2.
   O host deve esclarecer o significado e submeter uma nova claim: `"1200"` para
   mil e duzentos, ou `"1.2"`/`"1,2"` para um vírgula dois. Não remova zeros de
   uma entrada ambígua automaticamente. A claim original e o erro preservam o token.
