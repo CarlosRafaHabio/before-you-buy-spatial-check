@@ -1,0 +1,459 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Before You Buy V0 result",
+  "type": "object",
+  "properties": {
+    "engine_version": {
+      "const": "0.3.0"
+    },
+    "status": {
+      "enum": [
+        "CONFLICT DETECTED",
+        "NO CONFLICT DETECTED IN PROVIDED DATA",
+        "UNVERIFIED"
+      ]
+    },
+    "admission": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "domain_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]*$"
+            },
+            "receipt_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]*$"
+            },
+            "confirmation_ref": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]*$"
+            },
+            "evidence_digest": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "case_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]*$"
+            },
+            "revision": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]*$"
+            },
+            "room_identity": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]*$"
+            },
+            "item_identity": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]*$"
+            }
+          },
+          "required": [
+            "domain_id",
+            "receipt_id",
+            "confirmation_ref",
+            "evidence_digest",
+            "case_id",
+            "revision",
+            "room_identity",
+            "item_identity"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "execution_mode": {
+      "enum": [
+        "UNTRUSTED",
+        "HOST_CONFIRMED_INPUT",
+        "DEMO_ONLY"
+      ]
+    },
+    "case_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]*$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "revision": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]*$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "item_identity": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]*$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "input_digest": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]*$"
+          },
+          "field": {
+            "type": "string",
+            "maxLength": 4096
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 4096
+          },
+          "evidence_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]*$"
+            },
+            "maxItems": 1000
+          }
+        },
+        "required": [
+          "code",
+          "field",
+          "message",
+          "evidence_ids"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 5000
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]*$"
+          },
+          "field": {
+            "type": "string",
+            "maxLength": 4096
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 4096
+          },
+          "evidence_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]*$"
+            },
+            "maxItems": 1000
+          }
+        },
+        "required": [
+          "code",
+          "field",
+          "message",
+          "evidence_ids"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 5000
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "kind": {
+            "enum": [
+              "containment",
+              "intersection",
+              "clearance"
+            ]
+          },
+          "outcome": {
+            "enum": [
+              "PASS",
+              "CONFLICT",
+              "BLOCKED"
+            ]
+          },
+          "evidence_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]*$"
+            },
+            "maxItems": 1000
+          },
+          "actual_cm": {
+            "type": "string"
+          },
+          "required_cm": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "outcome",
+          "evidence_ids"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 5000
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]*$"
+          },
+          "field": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]*$"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meaning": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "source": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]*$"
+              },
+              "kind": {
+                "enum": [
+                  "user_measurement",
+                  "user_confirmation",
+                  "document_dimension",
+                  "photo",
+                  "model",
+                  "engine"
+                ]
+              },
+              "locator": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4096
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "locator"
+            ],
+            "additionalProperties": false
+          },
+          "status": {
+            "enum": [
+              "PROVIDED",
+              "DERIVED",
+              "INFERRED",
+              "UNKNOWN",
+              "CONFLICTING"
+            ]
+          },
+          "derivation": {
+            "type": "object",
+            "properties": {
+              "operation": {
+                "const": "unit_conversion"
+              },
+              "input": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]*$"
+              }
+            },
+            "required": [
+              "operation",
+              "input"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "id",
+          "field",
+          "value",
+          "unit",
+          "meaning",
+          "source",
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 1000
+    },
+    "normalized": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string",
+            "maxLength": 4096
+          },
+          "value": {
+            "type": "string"
+          },
+          "unit": {
+            "enum": [
+              "cm",
+              "deg"
+            ]
+          },
+          "evidence_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]*$"
+            },
+            "maxItems": 1000
+          }
+        },
+        "required": [
+          "field",
+          "value",
+          "unit",
+          "evidence_ids"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 1000
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 4096
+      },
+      "maxItems": 100
+    }
+  },
+  "required": [
+    "engine_version",
+    "status",
+    "execution_mode",
+    "admission",
+    "case_id",
+    "revision",
+    "item_identity",
+    "input_digest",
+    "findings",
+    "blockers",
+    "checks",
+    "evidence",
+    "normalized",
+    "limitations"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,123 @@
+{
+  "schema_version": "0.1",
+  "case_id": "case-1",
+  "revision": "r1",
+  "room_identity": "room-1",
+  "item_identity": "product-1",
+  "declarations": {
+    "openings": [],
+    "explicit_exclusions": [],
+    "required_clearances": [
+      {
+        "id": "clear-1",
+        "side": "right"
+      }
+    ]
+  },
+  "facts": [
+    {
+      "id": "rw",
+      "field": "room.width",
+      "value": 300,
+      "unit": "cm",
+      "meaning": "usable_width",
+      "source": {
+        "id": "message-1",
+        "kind": "user_measurement",
+        "locator": "room.width"
+      },
+      "status": "PROVIDED"
+    },
+    {
+      "id": "rd",
+      "field": "room.depth",
+      "value": 250,
+      "unit": "cm",
+      "meaning": "usable_depth",
+      "source": {
+        "id": "message-1",
+        "kind": "user_measurement",
+        "locator": "room.depth"
+      },
+      "status": "PROVIDED"
+    },
+    {
+      "id": "iw",
+      "field": "item.width",
+      "value": 252,
+      "unit": "cm",
+      "meaning": "assembled_width",
+      "source": {
+        "id": "message-1",
+        "kind": "user_measurement",
+        "locator": "item.width"
+      },
+      "status": "PROVIDED"
+    },
+    {
+      "id": "id",
+      "field": "item.depth",
+      "value": 60,
+      "unit": "cm",
+      "meaning": "assembled_depth",
+      "source": {
+        "id": "message-1",
+        "kind": "user_measurement",
+        "locator": "item.depth"
+      },
+      "status": "PROVIDED"
+    },
+    {
+      "id": "ix",
+      "field": "item.x",
+      "value": 0,
+      "unit": "cm",
+      "meaning": "position_x",
+      "source": {
+        "id": "message-1",
+        "kind": "user_measurement",
+        "locator": "item.x"
+      },
+      "status": "PROVIDED"
+    },
+    {
+      "id": "iy",
+      "field": "item.y",
+      "value": 0,
+      "unit": "cm",
+      "meaning": "position_y",
+      "source": {
+        "id": "message-1",
+        "kind": "user_measurement",
+        "locator": "item.y"
+      },
+      "status": "PROVIDED"
+    },
+    {
+      "id": "ir",
+      "field": "item.rotation",
+      "value": 0,
+      "unit": "deg",
+      "meaning": "rotation",
+      "source": {
+        "id": "message-1",
+        "kind": "user_measurement",
+        "locator": "item.rotation"
+      },
+      "status": "PROVIDED"
+    },
+    {
+      "id": "clear-1",
+      "field": "required_clearances.clear-1.required",
+      "value": 60,
+      "unit": "cm",
+      "meaning": "required_clearance",
+      "source": {
+        "id": "message-1",
+        "kind": "user_measurement",
+        "locator": "required_clearances.clear-1.required"
+      },
+      "status": "PROVIDED"
+    }
+  ]
+}

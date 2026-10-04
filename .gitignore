@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.env
+.env.*
+*.pem
+*.key
+private/
+private-*/
+commercial-private/
+audit-private/
+dist/
+*.zip

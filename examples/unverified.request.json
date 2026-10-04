@@ -1,0 +1,20 @@
+{
+  "schema_version": "0.1",
+  "case_id": "case-1",
+  "revision": "r1",
+  "room": {
+    "identity": "room-1",
+    "width": "rw",
+    "depth": "rd"
+  },
+  "item": {
+    "identity": "product-1",
+    "width": "iw",
+    "depth": "id",
+    "position": {
+      "x": "ix",
+      "y": "iy"
+    },
+    "rotation": "ir"
+  }
+}
