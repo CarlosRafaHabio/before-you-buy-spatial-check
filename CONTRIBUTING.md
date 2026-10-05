@@ -37,3 +37,17 @@ The core must remain independent of LLMs, platforms, frontend, database, and
 network services. Avoid unrelated refactors or dependencies; do not weaken tests
 to make a change pass. Consult [TRUST_BOUNDARY.md](TRUST_BOUNDARY.md) and
 [HOST_GUIDE.md](HOST_GUIDE.md) when a change touches admission or result consumption.
+
+
+## Bug reports
+
+For reproducibility, include the smallest input that demonstrates the issue and state
+the expected and observed result. When available, also include:
+
+- distribution version from `importlib.metadata.version("before-you-buy-spatial-check")`;
+- result `engine_version`;
+- Git commit SHA or release tag;
+- Python version and operating system.
+
+Security-sensitive reports should follow [SECURITY.md](SECURITY.md) rather than
+publishing exploit details in a public issue.
