@@ -29,7 +29,10 @@ PYTHONDONTWRITEBYTECODE=1 python -B -m unittest tests.test_host_harness_contract
 
 The public-release gate reruns the complete tree; there are no new test methods in
 that gate. See TEST_REPORT.md for historical 128/166 milestones and current 218.
-Lint/type checker and CI are not configured; these are not silently skipped tests.
+CI runs the complete suite on `push` and `pull_request` through
+[.github/workflows/tests.yml](.github/workflows/tests.yml), using `ubuntu-latest`
+and Python 3.12. Its test command is `python -m unittest discover -s tests -v`;
+test failures fail the job. Lint/type checking remains unconfigured.
 
 ## Host obligations covered
 
