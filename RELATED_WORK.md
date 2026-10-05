@@ -30,6 +30,31 @@ automatically acquire authority. Their scopes differ materially:
 This distinction is important: the project claims only the narrower boundary enforced
 by its public API and documented host assumptions.
 
+## Jingu Trust Gate
+
+[Jingu Trust Gate](https://github.com/ylu999/jingu-trust-gate) and its
+[Python SDK](https://github.com/ylu999/jingu-trust-gate-py) provide a generic,
+policy-injected deterministic admission pipeline for LLM proposals. Policies bind
+proposal units to support references and decide approval, downgrade, rejection and
+conflict handling.
+
+Spatial Check overlaps in one architectural principle: model-visible claims do not
+automatically become authority. The projects differ in scope and contract:
+
+- Jingu is domain-generic; the integrator supplies policy semantics.
+- Spatial Check embeds fixed rectangular 2D geometry, units, placement, clearance and
+  evidence semantics in the deterministic engine.
+- Spatial Check additionally maintains process-local revision/revocation state and
+  opaque admitted-evidence receipts; no equivalent lifecycle authority is claimed
+  here for Jingu.
+- Jingu includes generic audit/render/retry mechanisms that Spatial Check does not
+  attempt to reproduce.
+
+Spatial Check therefore does not claim invention of deterministic admission as a
+general pattern, nor superiority over adjacent frameworks. Its narrower claim is a
+concrete spatial validator whose positive/negative geometry is separated from
+host-controlled evidence admission.
+
 ## Scope of this list
 
 This file is intentionally short. Related work is added when it materially clarifies
