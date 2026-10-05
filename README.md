@@ -25,7 +25,9 @@ imports desse projeto, respeitando a licença Apache-2.0. Consumidores que usam 
 schemas devem disponibilizar também `schemas/`. Packaging será uma decisão separada.
 
 As obrigações do host estão em `HOST_GUIDE.md`; a superfície suportada está em
-`PUBLIC_API.md`. `TESTS.md` separa regressão do core, Consumer Contract e Host Harness.
+`PUBLIC_API.md`. `PERSISTENCE_BOUNDARY.md` define o contrato de design para hosts que
+precisem de continuidade de lifecycle entre reinícios. `TESTS.md` separa regressão
+do core, Consumer Contract e Host Harness.
 O milestone atual registra 218 testes aprovados; `TEST_REPORT.md` conserva os milestones anteriores.
 Testes aprovados não certificam plataforma, medida ou compra.
 
