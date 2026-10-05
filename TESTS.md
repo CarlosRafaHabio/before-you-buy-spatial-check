@@ -35,11 +35,14 @@ CI runs the complete suite on `push` and `pull_request` through
 and Python 3.12. Its unit-test command is
 `python -m unittest discover -s tests -v`; test failures fail the job.
 
-After the 222 unittest methods pass, CI also installs the source distribution with
-`python -m pip install . --no-deps`, changes to a directory outside the repository,
-checks the installed distribution metadata/import, and runs
-`python -m spatial_check --demo fits`. This is an installation smoke gate, not an
-additional unittest method. Lint/type checking remains unconfigured.
+After the 222 unittest methods pass, CI builds both wheel and sdist. It extracts the
+sdist, reruns all 222 unittest methods from that extracted source, rebuilds a wheel
+from the extracted sdist, installs that wheel into an isolated virtual environment
+outside the repository, checks distribution metadata/import, runs the fixed `fits`
+demo, and asserts its expected status/execution mode.
+
+This artifact-chain verification is not an additional unittest method. Lint/type
+checking remains unconfigured.
 
 ## Host obligations covered
 

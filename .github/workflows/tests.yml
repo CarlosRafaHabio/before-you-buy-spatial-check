@@ -19,11 +19,30 @@ jobs:
           python-version: '3.12'
       - name: Run unittest suite
         run: python -m unittest discover -s tests -v
-      - name: Install package from source
-        run: python -m pip install . --no-deps
-      - name: Smoke-test installed package outside repository
+      - name: Build wheel and sdist
+        run: |
+          python -m pip install build
+          python -m build --wheel --sdist
+      - name: Reproduce tests from extracted sdist
         shell: bash
         run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/sdist"
+          tar -xzf dist/*.tar.gz -C "$RUNNER_TEMP/sdist"
+          SDIST_ROOT="$(find "$RUNNER_TEMP/sdist" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
+          test -n "$SDIST_ROOT"
+          cd "$SDIST_ROOT"
+          python -m unittest discover -s tests -v
+          mkdir -p "$RUNNER_TEMP/rebuilt-wheel"
+          python -m pip wheel . --no-deps --wheel-dir "$RUNNER_TEMP/rebuilt-wheel"
+      - name: Install rebuilt wheel in isolated environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m venv "$RUNNER_TEMP/install-venv"
+          PY="$RUNNER_TEMP/install-venv/bin/python"
+          "$PY" -m pip install --no-deps "$RUNNER_TEMP"/rebuilt-wheel/*.whl
           cd "$RUNNER_TEMP"
-          python -c "from importlib.metadata import version; import spatial_check; assert version('before-you-buy-spatial-check') == '0.3.1'; assert callable(spatial_check.evaluate)"
-          python -m spatial_check --demo fits > spatial-check-demo.json
+          "$PY" -c "from importlib.metadata import version; import spatial_check; assert version('before-you-buy-spatial-check') == '0.3.1'; assert callable(spatial_check.evaluate)"
+          "$PY" -m spatial_check --demo fits > "$RUNNER_TEMP/spatial-check-demo.json"
+          "$PY" -c "import json, pathlib; d=json.loads(pathlib.Path('$RUNNER_TEMP/spatial-check-demo.json').read_text()); assert d['status'] == 'NO CONFLICT DETECTED IN PROVIDED DATA'; assert d['execution_mode'] == 'DEMO_ONLY'"

@@ -16,15 +16,20 @@ was changed for this milestone. The reference host demonstrates control flow onl
 it does not authenticate the reviewer, source, manufacturer, measurement, or physical
 truth.
 
-### Installable-source gate
+### Reproducible distribution gate
 
-The later packaging-only change keeps the 222-method suite unchanged and adds a
-separate CI smoke gate. After tests pass, CI builds/installs the project from the
-source checkout with `pip --no-deps`, changes outside the repository tree, verifies
-distribution metadata and `import spatial_check`, and runs the fixed `fits` CLI
-demo. The first packaging run exposed invalid duplicate license metadata; the PEP 639
-SPDX expression was retained and the superseded classifier removed. The corrected
-installation gate passes. This does not constitute a PyPI release.
+The packaging-only change keeps the 222-method suite unchanged and adds artifact
+verification. CI builds wheel + sdist, extracts the sdist, reruns all 222 tests from
+that extracted source, rebuilds a wheel from the sdist, installs the rebuilt wheel in
+an isolated virtual environment outside the repository tree, verifies distribution
+metadata/import, and asserts the expected fixed-demo result.
+
+The initial installable-source milestone exposed invalid duplicate license metadata;
+that was corrected by retaining the PEP 639 SPDX expression and removing the
+superseded classifier. A later independent review exposed that the default sdist
+omitted test helpers, examples, schemas and public review documentation. The
+reproducible-sdist milestone adds an explicit manifest and CI coverage for that
+artifact chain. This does not constitute a PyPI release.
 
 ## Previous milestone — Host Harness V0
 

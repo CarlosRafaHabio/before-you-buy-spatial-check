@@ -31,9 +31,9 @@ O nome da distribuição é `before-you-buy-spatial-check`; o pacote de import c
 `spatial_check`. A versão da distribuição é separada de `engine_version`, permitindo
 mudanças de packaging/documentação sem fingir alteração semântica do motor.
 
-Os JSON Schemas em `schemas/` continuam artefatos do repositório/release e não são
-instalados como package data nesta primeira etapa. O runtime usa
-`spatial_check.contracts`.
+Os JSON Schemas em `schemas/` entram no source distribution e nos artefatos-fonte do
+repositório/release, mas não são instalados como package data do wheel nesta etapa. O
+runtime usa `spatial_check.contracts`.
 
 Veja `PACKAGING.md` para o contrato completo de distribuição e versionamento.
 

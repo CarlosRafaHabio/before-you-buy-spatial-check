@@ -59,14 +59,13 @@ branch.
 
 ## JSON schemas
 
-The root `schemas/` directory remains a **repository/release artifact** in this
-first packaging pass. It is not installed as Python package data.
+The root `schemas/` directory is included in the **source distribution and repository/release source artifacts** in this packaging pass. It is not installed as wheel package data.
 
 Runtime validation uses the contracts defined in `spatial_check.contracts`, so the
 installed library does not require the JSON files to execute.
 
 Consumers that require the portable JSON Schema artifacts should obtain them from the
-matching repository/release revision. A later packaging change may expose schemas as
+matching source distribution, commit, or release tag — never from a moving `main` reference. A later packaging change may expose schemas as
 installed resources, but that should define a stable resource-access API rather than
 silently place files somewhere in an environment.
 
@@ -82,5 +81,31 @@ Before any first PyPI release, review at least:
 - portable schema distribution strategy;
 - Trusted Publishing/provenance setup;
 - installation documentation from a clean environment.
+
+## Artifact verification
+
+CI verifies the distribution chain rather than only the checkout:
+
+1. run the 222-method unittest suite in the checkout;
+2. build wheel and sdist;
+3. extract the sdist and rerun the complete unittest suite there;
+4. rebuild a wheel from that extracted sdist;
+5. install the rebuilt wheel into an isolated virtual environment outside the source tree;
+6. verify distribution metadata/import and assert the expected fixed-demo status.
+
+The sdist intentionally includes the complete public test support tree, examples,
+JSON schemas and top-level public Markdown documentation required to reproduce review
+and tests. The wheel remains a runtime artifact containing only the Python package and
+license metadata.
+
+## Bug-report identity
+
+A bug report should record:
+
+- distribution version from `importlib.metadata.version("before-you-buy-spatial-check")`;
+- result `engine_version`, when a result was produced;
+- the Git commit or release tag when known.
+
+These identifiers serve different purposes and should not be substituted for one another.
 
 Do not infer PyPI availability from the presence of `pyproject.toml`.
