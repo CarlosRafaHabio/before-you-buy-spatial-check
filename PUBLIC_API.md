@@ -36,7 +36,9 @@ The public supporting surfaces used by contract tests are:
 - spatial_check.json_io.loads(raw) and load(path): bounded strict JSON parsing,
   rejecting duplicate keys/non-finite constants; no admission.
 - schemas/input.schema.json, evidence.schema.json and result.schema.json:
-  portable structural schemas. Runtime checks add semantic constraints.
+  portable structural schemas in the repository/release artifacts. They are not
+  installed as Python package data in distribution 0.3.1. Runtime checks add semantic
+  constraints through spatial_check.contracts.
 
 Schema-valid does not establish coherent decision semantics, physical truth,
 authenticity or currency. Internal geometry helpers, schema-building helpers and
@@ -48,5 +50,7 @@ Hosts must also preserve the full authoritative result and display its limitatio
 as described in HOST_GUIDE.md. Consumers of remote/imported JSON cannot authenticate
 it by calling this formatter; it accepts inputs and a receipt, not a result object.
 
-Python 3.12+ and the standard library are the only runtime requirements. No packaging
-metadata, pip distribution, CI service or transport API is supplied by this candidate.
+Python 3.12+ and the standard library are the only runtime requirements. Distribution
+0.3.1 adds installable source-package metadata but no third-party runtime dependency.
+There is no supported PyPI publication, transport API or platform adapter. See
+PACKAGING.md for distribution/versioning rules.
