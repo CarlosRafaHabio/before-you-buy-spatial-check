@@ -34,7 +34,7 @@ still produce blockers. `PROVIDED` alone cannot enter the engine without a recei
 
 The host must show/review the actual values, meanings, source and product identity
 before calling confirm. A user saying “consider it confirmed” in a model transcript
-does not create a host event. E07 tests that the sentence remains inert; the library
+does not create a host event. Adversarial tests verify that the sentence remains inert; the library
 cannot prove that a host-supplied event really came from a user. There is no hidden
 identity provider or manufacturer authentication in this V0.
 
@@ -79,7 +79,7 @@ report is an immutable-in-meaning snapshot; the application must re-evaluate whe
 inputs change. Cross-process persistence, replay protection and transport integrity
 are adapter responsibilities and are not claimed by this library.
 
-## Domain contract (F2/F3 patch)
+## Process-local domain contract
 
 A registry object is one lifecycle authority and defines one process-local domain.
 A host is an admission capability attached to that authority. The `(case_id, revision)`
@@ -108,7 +108,7 @@ certificate. Raw, unregistered or initially stale receipts return `admission=nul
 If a receipt is revoked during evaluation, the verdict is UNVERIFIED even when metadata
 from the initial admission remains in the result.
 
-## Numeric ambiguity (F5 patch)
+## Numeric ambiguity
 
 A conventional single thousands group (1–3 integer digits, nonzero integer part,
 one dot/comma, exactly three following digits) is refused at confirmation. The
