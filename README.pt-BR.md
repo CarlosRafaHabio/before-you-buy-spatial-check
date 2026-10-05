@@ -13,16 +13,29 @@ compatibilidade entre versões. O núcleo é independente de qualquer plataforma
 Capafy é somente um consumidor futuro possível; não há dependência ou integração
 Capafy implementada. Outros projetos podem assumir o papel de host.
 
-## Usar a distribuição de fontes
+## Instalar a distribuição de fontes
 
-Requer Python 3.12+. Não há dependências externas a instalar. Abra um terminal na
-raiz desta árvore, onde estão `spatial_check/`, `schemas/` e `examples/`; os imports
-funcionam a partir dessa raiz. Não existe pacote publicado, `pip install` suportado,
-build configurado ou distribuição PyPI neste candidato.
+Requer Python 3.12+. O runtime continua sem dependências externas. A partir de um
+checkout local:
 
-Para consumir em outro projeto, disponibilize a pasta `spatial_check/` no caminho de
-imports desse projeto, respeitando a licença Apache-2.0. Consumidores que usam os
-schemas devem disponibilizar também `schemas/`. Packaging será uma decisão separada.
+```sh
+python -m pip install . --no-deps
+```
+
+O CI instala o pacote e testa import/CLI fora da árvore do repositório.
+
+Ainda **não existe publicação PyPI suportada**. Até uma decisão explícita de
+publicação, use um checkout revisado ou fixe um commit/tag Git.
+
+O nome da distribuição é `before-you-buy-spatial-check`; o pacote de import continua
+`spatial_check`. A versão da distribuição é separada de `engine_version`, permitindo
+mudanças de packaging/documentação sem fingir alteração semântica do motor.
+
+Os JSON Schemas em `schemas/` continuam artefatos do repositório/release e não são
+instalados como package data nesta primeira etapa. O runtime usa
+`spatial_check.contracts`.
+
+Veja `PACKAGING.md` para o contrato completo de distribuição e versionamento.
 
 As obrigações do host estão em `HOST_GUIDE.md`; a superfície suportada está em
 `PUBLIC_API.md`. `PERSISTENCE_BOUNDARY.md` define o contrato de design para hosts que

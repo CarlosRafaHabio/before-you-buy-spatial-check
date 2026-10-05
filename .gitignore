@@ -10,3 +10,6 @@ commercial-private/
 audit-private/
 dist/
 *.zip
+
+build/
+*.egg-info/

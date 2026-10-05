@@ -32,8 +32,14 @@ The public-release gate reruns the complete tree; there are no new test methods 
 that gate. See TEST_REPORT.md for historical 128/166/218 milestones and the current reference-demo milestone.
 CI runs the complete suite on `push` and `pull_request` through
 [.github/workflows/tests.yml](.github/workflows/tests.yml), using `ubuntu-latest`
-and Python 3.12. Its test command is `python -m unittest discover -s tests -v`;
-test failures fail the job. Lint/type checking remains unconfigured.
+and Python 3.12. Its unit-test command is
+`python -m unittest discover -s tests -v`; test failures fail the job.
+
+After the 222 unittest methods pass, CI also installs the source distribution with
+`python -m pip install . --no-deps`, changes to a directory outside the repository,
+checks the installed distribution metadata/import, and runs
+`python -m spatial_check --demo fits`. This is an installation smoke gate, not an
+additional unittest method. Lint/type checking remains unconfigured.
 
 ## Host obligations covered
 

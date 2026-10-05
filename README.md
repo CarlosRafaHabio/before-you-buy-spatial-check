@@ -209,19 +209,35 @@ GitHub Actions runs the full suite on `push` and `pull_request` with Python 3.12
 
 See [TESTS.md](TESTS.md) and [TEST_REPORT.md](TEST_REPORT.md).
 
-## Source distribution
+## Installation and distribution
 
-The repository is currently the supported distribution.
+The repository now contains standards-based Python packaging metadata. From a local
+checkout:
 
-There is no published PyPI package and no supported `pip install` workflow yet.
-Run from the source-tree root or make `spatial_check/` available on the importing
-project's Python path.
+```sh
+python -m pip install . --no-deps
+```
 
-Packaging is intentionally treated as a separate distribution decision rather than
-being implied by the existence of Python source files.
+The installed runtime has **zero third-party dependencies**. GitHub Actions verifies
+that the installed package imports and runs from outside the repository tree.
+
+There is currently **no supported PyPI publication**. Until that is explicitly
+approved, use a reviewed local checkout or pin a Git commit/release tag.
+
+The distribution name is `before-you-buy-spatial-check`; the Python import package
+remains `spatial_check`. Distribution versioning is separate from the engine result
+contract version, so packaging/documentation changes do not imply changed engine
+semantics.
+
+The root `schemas/` JSON files remain repository/release artifacts and are not
+installed as package data in this first packaging pass. Runtime validation uses
+`spatial_check.contracts`.
+
+See [PACKAGING.md](PACKAGING.md) for the complete boundary and versioning policy.
 
 ## Documentation map
 
+- [PACKAGING.md](PACKAGING.md) — installable distribution and versioning boundary
 - [PUBLIC_API.md](PUBLIC_API.md) — supported experimental API
 - [SCHEMA.md](SCHEMA.md) — request, evidence, and result contracts
 - [TRUST_BOUNDARY.md](TRUST_BOUNDARY.md) — admission and trust model
