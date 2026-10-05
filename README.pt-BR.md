@@ -28,8 +28,27 @@ As obrigações do host estão em `HOST_GUIDE.md`; a superfície suportada está
 `PUBLIC_API.md`. `PERSISTENCE_BOUNDARY.md` define o contrato de design para hosts que
 precisem de continuidade de lifecycle entre reinícios. `TESTS.md` separa regressão
 do core, Consumer Contract e Host Harness.
-O milestone atual registra 218 testes aprovados; `TEST_REPORT.md` conserva os milestones anteriores.
+O milestone atual registra 222 testes aprovados; `TEST_REPORT.md` conserva os milestones anteriores.
 Testes aprovados não certificam plataforma, medida ou compra.
+
+## Veja a fronteira em ação
+
+O comparativo mais direto usa os mesmos dados candidatos em uma integração
+intencionalmente insegura e no Spatial Check:
+
+```sh
+python examples/naive_vs_protected.py
+```
+
+Para exercitar a admissão controlada pelo host com revisão interativa:
+
+```sh
+python examples/reference_host.py
+```
+
+O segundo exemplo mostra a claim canônica exata e só chama `HostIntake.confirm()`
+após a entrada explícita `CONFIRM`. Isso demonstra a fronteira de dados/API; não
+autentica a pessoa, a fonte ou a veracidade física das medidas.
 
 ## Executar
 

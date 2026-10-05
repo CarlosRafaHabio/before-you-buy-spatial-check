@@ -1,4 +1,4 @@
-# Test organization — current 218 methods
+# Test organization — current 222 methods
 
 All source/tests are retained unchanged. The test tree needs no external audit files,
 private documentation, network, credentials, LLM or commercial platform.
@@ -12,7 +12,8 @@ Python 3.12+ standard-library unittest is sufficient. Subcases are not extra tes
 | Core F2/F3/F5 regressions | test_minimal_patch.py | 29 | Shared lifecycle, traceability and numeric ambiguity |
 | Consumer Contract V0 | consumer_contract_v0.py, test_consumer_integration_contract_v0.py | 38 | Serialized result consumption and limits of schema/digests/history |
 | Host Harness V0 | host_harness_contract_v0.py, test_host_harness_contract_v0.py | 52 | Host review/admission/lifecycle/context/presentation obligations |
-| Total | All test_*.py | 218 | No skips recorded at the frozen milestone |
+| Executable reference examples | test_reference_examples.py | 4 | Anti-pattern comparison and interactive host cancel/confirm contract |
+| Total | All test_*.py | 222 | No skips recorded at the current milestone |
 
 tests/helpers.py supplies only synthetic regression data and test-only admission.
 Its fresh issuer per fixture isolates core tests; it is not a deployment pattern.
@@ -28,7 +29,7 @@ PYTHONDONTWRITEBYTECODE=1 python -B -m unittest tests.test_host_harness_contract
 ```
 
 The public-release gate reruns the complete tree; there are no new test methods in
-that gate. See TEST_REPORT.md for historical 128/166 milestones and current 218.
+that gate. See TEST_REPORT.md for historical 128/166/218 milestones and the current reference-demo milestone.
 CI runs the complete suite on `push` and `pull_request` through
 [.github/workflows/tests.yml](.github/workflows/tests.yml), using `ubuntu-latest`
 and Python 3.12. Its test command is `python -m unittest discover -s tests -v`;

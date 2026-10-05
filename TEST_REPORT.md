@@ -1,6 +1,22 @@
-# Test report — current 218 / engine 0.3.0
+# Test report — current 222 / engine 0.3.0
 
-## Current milestone — Host Harness V0
+## Current milestone — executable evidence-admission reference
+
+Recorded on 2026-10-05 in GitHub Actions with Python 3.12: **222 test methods passed**.
+The previous 218-test Host Harness milestone remains intact; four reference-example
+tests were added. They verify that the intentionally unsafe metadata-trusting example
+can appear positive while the same raw candidate fails closed as
+`UNVERIFIED / TRUST_REQUIRED`, that cancelling interactive review never calls
+`HostIntake.confirm()`, that the exact canonical claim/digest is shown before
+confirmation, and that explicit `CONFIRM` produces `HOST_CONFIRMED_INPUT` for the
+fixed synthetic fixture.
+
+No geometry, schema, result-state, trust semantics, public API, or runtime dependency
+was changed for this milestone. The reference host demonstrates control flow only;
+it does not authenticate the reviewer, source, manufacturer, measurement, or physical
+truth.
+
+## Previous milestone — Host Harness V0
 
 Recorded on 2026-10-04 with Python 3.12.14: **218 passed, 0 failures, 0 errors,
 0 skipped**. The earlier 166 tests remain, with 52 Host Harness tests added.
