@@ -7,12 +7,15 @@ not authenticate the reviewer, source, manufacturer, measurement, or physical tr
 import hashlib
 import json
 from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from spatial_check import evaluate
 from spatial_check.json_io import load
 from spatial_check.trust import HostIntake, LifecycleRegistry, claim_from_data
-
-ROOT = Path(__file__).resolve().parents[1]
 
 HOST_SCOPE = {
     "case_id": "case-1",
