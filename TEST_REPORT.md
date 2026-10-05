@@ -16,6 +16,16 @@ was changed for this milestone. The reference host demonstrates control flow onl
 it does not authenticate the reviewer, source, manufacturer, measurement, or physical
 truth.
 
+### Installable-source gate
+
+The later packaging-only change keeps the 222-method suite unchanged and adds a
+separate CI smoke gate. After tests pass, CI builds/installs the project from the
+source checkout with `pip --no-deps`, changes outside the repository tree, verifies
+distribution metadata and `import spatial_check`, and runs the fixed `fits` CLI
+demo. The first packaging run exposed invalid duplicate license metadata; the PEP 639
+SPDX expression was retained and the superseded classifier removed. The corrected
+installation gate passes. This does not constitute a PyPI release.
+
 ## Previous milestone — Host Harness V0
 
 Recorded on 2026-10-04 with Python 3.12.14: **218 passed, 0 failures, 0 errors,
