@@ -19,3 +19,11 @@ jobs:
           python-version: '3.12'
       - name: Run unittest suite
         run: python -m unittest discover -s tests -v
+      - name: Install package from source
+        run: python -m pip install . --no-deps
+      - name: Smoke-test installed package outside repository
+        shell: bash
+        run: |
+          cd "$RUNNER_TEMP"
+          python -c "from importlib.metadata import version; import spatial_check; assert version('before-you-buy-spatial-check') == '0.3.1'; assert callable(spatial_check.evaluate)"
+          python -m spatial_check --demo fits > spatial-check-demo.json
