@@ -4,6 +4,7 @@ The reviewer sees the exact canonical EvidenceClaim bytes and must type CONFIRM 
 HostIntake.confirm() is called. This demonstrates host-controlled admission; it does
 not authenticate the reviewer, source, manufacturer, measurement, or physical truth.
 """
+import hashlib
 import json
 from pathlib import Path
 
@@ -32,7 +33,7 @@ def run_review(*, input_fn=input, output_fn=print) -> int:
     output_fn("SYNTHETIC_REFERENCE_HOST")
     output_fn("Review the exact canonical claim below.")
     output_fn("This review controls admission only; it does not authenticate real-world facts.")
-    output_fn(f"CLAIM_SHA256={__import__('hashlib').sha256(claim.payload.encode()).hexdigest()}")
+    output_fn(f"CLAIM_SHA256={hashlib.sha256(claim.payload.encode()).hexdigest()}")
     output_fn("BEGIN_CANONICAL_CLAIM")
     output_fn(claim.payload)
     output_fn("END_CANONICAL_CLAIM")
