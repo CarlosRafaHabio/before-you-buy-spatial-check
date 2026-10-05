@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "before-you-buy-spatial-check"
+version = "0.3.1"
+description = "Deterministic rectangular spatial validation with host-controlled evidence admission."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "Apache-2.0"
+authors = [
+  { name = "Carlos Rafael" }
+]
+dependencies = []
+keywords = [
+  "ai-safety",
+  "deterministic-validation",
+  "evidence-admission",
+  "geometry",
+  "llm",
+  "spatial-validation"
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Libraries"
+]
+
+[project.urls]
+Repository = "https://github.com/CarlosRafaHabio/before-you-buy-spatial-check"
+Issues = "https://github.com/CarlosRafaHabio/before-you-buy-spatial-check/issues"
+
+[tool.setuptools]
+packages = ["spatial_check"]
+include-package-data = false
