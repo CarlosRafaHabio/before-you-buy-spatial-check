@@ -2,7 +2,7 @@
 
 [Português (Brasil)](README.pt-BR.md)
 
-**Deterministic spatial validation with a host-controlled, process-local evidence-admission boundary for LLM-assisted systems.**
+**Deterministic rectangular 2D placement validation with a host-controlled, process-local evidence-admission boundary for LLM-assisted systems.**
 
 Spatial Check answers one narrow question:
 
@@ -211,8 +211,8 @@ See [TESTS.md](TESTS.md) and [TEST_REPORT.md](TEST_REPORT.md).
 
 ## Installation and distribution
 
-The repository now contains standards-based Python packaging metadata. From a local
-checkout:
+The repository now contains standards-based Python packaging metadata. CI verifies
+both the wheel and the source distribution artifact chain. From a local checkout:
 
 ```sh
 python -m pip install . --no-deps
@@ -229,9 +229,9 @@ remains `spatial_check`. Distribution versioning is separate from the engine res
 contract version, so packaging/documentation changes do not imply changed engine
 semantics.
 
-The root `schemas/` JSON files remain repository/release artifacts and are not
-installed as package data in this first packaging pass. Runtime validation uses
-`spatial_check.contracts`.
+The root `schemas/` JSON files are included in the source distribution and release
+source artifacts, but are not installed as wheel package data in this first packaging
+pass. Runtime validation uses `spatial_check.contracts`.
 
 See [PACKAGING.md](PACKAGING.md) for the complete boundary and versioning policy.
 
