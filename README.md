@@ -2,7 +2,7 @@
 
 [Português (Brasil)](README.pt-BR.md)
 
-**Deterministic spatial validation and trust-boundary engine for LLM-assisted systems.**
+**Deterministic spatial validation with a host-controlled, process-local evidence-admission boundary for LLM-assisted systems.**
 
 Spatial Check answers one narrow question:
 
@@ -40,18 +40,41 @@ authoritative result
 The engine fails closed when evidence is missing, inferred, conflicting, stale,
 revoked, or outside the admitted scope.
 
+## See the boundary in action
+
+The fastest demonstration compares an intentionally unsafe integration with Spatial
+Check using the **same candidate evidence**:
+
+```sh
+python examples/naive_vs_protected.py
+```
+
+The anti-pattern trusts source/status labels supplied inside candidate data. Spatial
+Check receives the same raw candidate and returns `UNVERIFIED / TRUST_REQUIRED`
+because no host admission occurred.
+
+To exercise the host-controlled path interactively:
+
+```sh
+python examples/reference_host.py
+```
+
+The reference host prints the exact canonical claim and calls
+`HostIntake.confirm()` only after the reviewer types `CONFIRM`. This demonstrates
+control flow, not authentication of the reviewer or truth of the synthetic facts.
+
 ## Try it in under a minute
 
 Clone the repository and run from its root. No third-party runtime dependencies are
 required.
 
 ```sh
-python -m unittest discover -s tests -v
 python -m spatial_check --demo fits
 python -m spatial_check --demo clearance_conflict --text
+python -m unittest discover -s tests -v
 ```
 
-The fixed demos use synthetic data only.
+The fixed demos and reference examples use synthetic data only.
 
 Expected public result states are:
 
@@ -83,7 +106,9 @@ optimization, accessibility certification, structural analysis, full-room planni
 See [CAPABILITY_MATRIX.md](CAPABILITY_MATRIX.md) for the full capability/limitation
 matrix.
 
-## Trust boundary
+## Evidence-admission boundary
+
+The "trust boundary" in this project is specifically a **host-controlled, process-local data/API boundary**. It is not human authentication, source authentication, a Python sandbox, or durable cross-process authority.
 
 Raw JSON, model output, document text, source labels, and `verified` fields do not
 create trusted evidence.
@@ -170,7 +195,7 @@ consumer-supplied IDs.
 
 ## Tests
 
-The current public milestone contains **218 unittest methods** across:
+The current public milestone contains **222 unittest methods** across:
 
 - deterministic geometry and acceptance behavior;
 - adversarial inputs;
@@ -202,6 +227,7 @@ being implied by the existence of Python source files.
 - [TRUST_BOUNDARY.md](TRUST_BOUNDARY.md) — admission and trust model
 - [HOST_GUIDE.md](HOST_GUIDE.md) — host integration obligations
 - [PERSISTENCE_BOUNDARY.md](PERSISTENCE_BOUNDARY.md) — restart/replay persistence design
+- [RELATED_WORK.md](RELATED_WORK.md) — adjacent approaches and scope distinctions
 - [CAPABILITY_MATRIX.md](CAPABILITY_MATRIX.md) — supported capabilities and limits
 - [TESTS.md](TESTS.md) — test organization and guarantees
 - [SECURITY.md](SECURITY.md) — vulnerability reporting
