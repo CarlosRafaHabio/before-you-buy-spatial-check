@@ -5,11 +5,14 @@ deliberately unsafe: it treats model-supplied metadata as authority. Do not copy
 into a real integration.
 """
 from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from spatial_check import evaluate
 from spatial_check.json_io import load
-
-ROOT = Path(__file__).resolve().parents[1]
 
 
 def intentionally_unsafe_naive_decision(candidate: dict) -> str:
