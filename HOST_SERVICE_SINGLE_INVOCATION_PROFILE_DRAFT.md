@@ -599,12 +599,211 @@ For Morable:
 
 ```text
 real Python interop ............... PROVEN
+atomic external state token ....... PROVEN IN STAGING
+review generation/version CAS ..... PROVEN IN STAGING
+explicit revocation policy ........ PROVEN IN STAGING
+current -> revoked snapshot cut .... PROVEN IN STAGING
+recorded Snapshot V2 conformance ... TEST
+review reuse policy ............... DRAFT PROFILE POLICY
 private host deployment ........... NOT IMPLEMENTED
-atomic external state token ....... NOT YET PROVEN
-review reuse policy ............... DRAFT
-revocation policy ................. NOT YET PROVEN
+least-privilege production role .... NOT YET PROVEN
+real two-session deployment race ... NOT YET PROVEN
+restore/PITR authority epoch ....... NOT YET PROVEN
 Vercel deployment vehicle ......... NOT SELECTED
 production qualification .......... NOT GRANTED
 ```
 
 This draft exists so the integration can be tested honestly instead of being forced into V0 semantics.
+
+---
+
+## 27. Morable PostgreSQL Snapshot V2 conformance gate
+
+Date: 2026-10-07
+
+This section records a concrete external-authority implementation candidate without making it part of the Spatial Check core.
+
+Morable staging now provides an atomic server-only reader:
+
+```text
+read_spatial_check_authority_snapshot_v2(
+  authenticated principal,
+  reviewEventId,
+  evidenceDigest
+)
+```
+
+A successful snapshot is returned only when the same statement observes:
+
+```text
+project active/current
++
+exact project incarnation
++
+exact case sequence
++
+exact PENDING V2 record
++
+exact REVIEWED V2 event
++
+valid review binding digest
++
+review-authority head status = REVIEWED
++
+head generation/event/version = selected review
++
+no valid revocation
+```
+
+The state token commits to both project authority and review authority, including review generation, authority version, current review event and revocation state.
+
+### 27.1 Real complete staging fixture
+
+A complete Morable/Spatial Check evidence fixture was persisted through the real staging lifecycle:
+
+```text
+RESERVED authorityVersion 1
+-> PENDING authorityVersion 2
+-> REVIEWED authorityVersion 3
+```
+
+Recorded selector:
+
+```text
+reviewEventId =
+mreview-v2-e8e189cd3468beac782bc40e19366077025418f424aefa93
+
+evidenceDigest =
+86db9f16f80844a0c2a2c6ebfeee46aa0a1ebd4578889fe5412f83c1f8f13a26
+```
+
+Recorded current state token:
+
+```text
+254cdc7626d1ccff2a0f05e61dea0f3ef3c23547f939af2e1a07ddd26a9f9047
+```
+
+The successful snapshot contained the exact canonical:
+- claim payload;
+- effective request;
+- review context;
+- confirmation reference;
+- case/revision/room/item scope;
+- project incarnation and case sequence;
+- review subject/generation/version;
+- review binding digest.
+
+The evidence is the same complete geometry scenario used by the prior Morable real-Python interop proof, with the pose locators rebound to the actual reserved V2 review event.
+
+### 27.2 Real revocation cut
+
+The same staging review was explicitly revoked:
+
+```text
+REVIEWED authorityVersion 3
+-> REVOKED authorityVersion 4
+```
+
+The next independent Snapshot V2 statement returned:
+
+```text
+ok = false
+code = REVIEW_REVOKED
+```
+
+with a distinct immutable revocation event.
+
+The revoked response did not return:
+- claim payload;
+- effective request;
+- review context.
+
+Temporary staging rows were then deleted and cascade cleanup returned zero project/head/history/PENDING/REVIEWED/REVOKE rows.
+
+### 27.3 Recorded conformance fixture is not live authority
+
+The repository may retain these captured payloads as deterministic test fixtures.
+
+That does **not** make the JSON authoritative.
+
+The recorded payload proves contract compatibility only.
+
+Production authority still requires a trusted/authenticated live reader that obtains the current snapshot from the external authority at preflight and again at postflight.
+
+Imported/cached fixture JSON can never substitute for that reader.
+
+### 27.4 MVCC requirement
+
+Staging demonstrated that a `STABLE` snapshot read in the same outer PostgreSQL statement as a preceding revoke can still observe the statement-start pre-revoke view.
+
+Therefore this profile requires:
+
+```text
+statement/call 1: currentness preflight
+-> local claim/confirm/evaluate
+statement/call 2: currentness postflight
+```
+
+under an isolation model that permits the second statement to observe committed intervening changes.
+
+Do not:
+- combine authority mutation + postflight in one SQL statement;
+- retain one repeatable-read snapshot across evaluation;
+- hold DB row locks across Python/network execution.
+
+### 27.5 New executable conformance tests
+
+The stacked conformance slice adds:
+
+```text
+tests/morable_postgres_snapshot_v2_contract.py
+tests/test_morable_postgres_snapshot_v2_conformance.py
+```
+
+The adapter is TEST ONLY.
+
+It independently checks the recorded external response for:
+- exact Snapshot V2 contract/current state;
+- project/review identity shapes;
+- generation/version relation;
+- no revocation on success;
+- canonical evidence/request/context bytes;
+- Python `claim_from_data()` canonical equality;
+- SHA-256 evidence digest;
+- exact request/evidence scope;
+- review-event-bound confirmation reference;
+- pose locator binding to that review event.
+
+The conformance suite then uses the existing draft `SingleInvocationHost` to execute the real:
+
+```text
+claim_from_data
+-> fresh LifecycleRegistry
+-> HostIntake.confirm
+-> evaluate
+-> postflight token check
+```
+
+It also models the recorded current -> REVOKED postflight transition and requires current handoff to fail.
+
+### 27.6 What this gate can and cannot prove
+
+If the conformance suite is green, it proves:
+
+```text
+Morable PostgreSQL Snapshot V2 contract
+is compatible with
+HOST_SERVICE_SINGLE_INVOCATION draft semantics
+and the real Spatial Check public admission/evaluation APIs.
+```
+
+It still does NOT prove:
+- V0 compatibility;
+- production Python-service qualification;
+- Vercel private-service security;
+- production authentication/authorization;
+- least-privilege database credentials;
+- true networked two-instance concurrency;
+- restore/PITR replay resistance.
+
+Those remain separate qualification gates.
