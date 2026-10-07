@@ -807,3 +807,175 @@ It still does NOT prove:
 - restore/PITR replay resistance.
 
 Those remain separate qualification gates.
+
+
+---
+
+## 28. External authority epoch for restore/PITR ABA
+
+Status: **DRAFT QUALIFICATION GATE**
+
+The PostgreSQL Snapshot V2 token prevents ordinary application-level A→B→A because project sequence, review generation, review authority version and review-event identity advance monotonically.
+
+It does **not**, by itself, prove resistance to a whole-database rollback.
+
+A sufficiently old database restore can rewind all database-owned inputs together:
+
+```text
+DB state A / token A
+-> DB state B / token B
+-> restore whole database to A
+-> DB-owned token A can reappear
+```
+
+That is a distinct ABA class.
+
+### 28.1 Required non-database lineage
+
+This profile therefore requires one integrity-controlled:
+
+```text
+authority_epoch
+```
+
+outside the PostgreSQL backup/restore domain.
+
+The epoch is:
+- opaque;
+- unique for one active authority lineage/environment;
+- not required to be secret;
+- not a credential;
+- not a signature;
+- not a Spatial Check receipt;
+- not a replacement for authentication or authorization.
+
+Its required security property is **integrity / controlled rotation**, not confidentiality.
+
+The profile-level currentness token is:
+
+```text
+SHA256(canonical({
+  domain:
+    "spatial_check_host_service_authority_epoch_v1",
+  authority_epoch:
+    <external epoch>,
+  external_snapshot_contract:
+    "spatial_check_external_authority_snapshot_v2",
+  external_state_token:
+    <PostgreSQL Snapshot V2 state token>
+}))
+```
+
+The raw PostgreSQL token remains part of the composition but is no longer sufficient by itself for cross-restore currentness.
+
+### 28.2 Mandatory rotation events
+
+Before traffic is allowed to resume, the epoch MUST change after any operation that can make database authority history rewind or fork, including:
+
+- PITR rollback;
+- physical/database backup restore into the active authority environment;
+- restore or clone into a distinct project/environment;
+- authority database replacement/import;
+- disaster-recovery cutover when the selected database lineage may be older than the previously served lineage;
+- branch/environment creation from copied authority data when the new environment could otherwise share historical tokens.
+
+Ordinary project/review mutations do **not** require epoch rotation because Snapshot V2 already changes its database token.
+
+### 28.3 Operational limitation
+
+The epoch cannot infer that a restore happened.
+
+Therefore:
+
+```text
+restore detection + epoch rotation
+```
+
+is an operational/deployment responsibility.
+
+A production implementation is unsupported if operators or automation can:
+
+```text
+restore/clone/rewind database
+-> resume authority traffic
+-> preserve the old authority_epoch
+```
+
+The restore procedure MUST fail closed until a new epoch is installed.
+
+### 28.4 Preflight/postflight
+
+Every evaluation attempt must read both:
+
+```text
+live PostgreSQL Snapshot V2
++
+live external authority_epoch
+```
+
+at preflight and again at postflight.
+
+The profile-level token, not the raw database token alone, is compared:
+
+```text
+postflight.profile_state_token
+==
+preflight.profile_state_token
+```
+
+A database mutation or epoch rotation during evaluation invalidates handoff.
+
+### 28.5 Point-of-use
+
+Point-of-use currentness must also recompute the composite token.
+
+An envelope produced before an epoch rotation is historical immediately after rotation, even if a restore has recreated byte-for-byte identical PostgreSQL authority state.
+
+### 28.6 Clone/environment isolation
+
+Two environments with identical restored PostgreSQL data MUST have distinct epochs.
+
+Therefore the same copied Snapshot V2 database token does not imply shared live authority between:
+- production and staging;
+- source and restore clone;
+- old and disaster-recovery authority environments.
+
+### 28.7 Test-only executable gate
+
+The stacked qualification slice adds:
+
+```text
+tests/host_service_authority_epoch_draft.py
+tests/test_host_service_authority_epoch_draft.py
+```
+
+Coverage includes:
+- stable DB state + stable epoch;
+- demonstration that DB-only restore without epoch rotation recreates the old composite token;
+- fail-closed restore qualification when the epoch did not rotate;
+- restored DB + rotated epoch cannot recreate the old token;
+- clone with copied DB data + distinct epoch cannot share the old token;
+- epoch rotation during evaluation blocks handoff;
+- old point-of-use snapshot fails after rotation;
+- epoch never appears as Spatial Check admission/receipt capability;
+- invalid/same-value rotation fails closed;
+- ordinary database state-token mutation remains independently effective;
+- V0 deployment qualification remains unchanged.
+
+### 28.8 Storage/topology remains open
+
+This draft intentionally does not select where the production epoch lives.
+
+A future topology must prove that the chosen epoch store/control plane is outside the database rollback domain it is intended to fence.
+
+Storing the only epoch copy in the same PostgreSQL database is invalid.
+
+Automatically copying the same epoch into a restored/clone environment without an explicit lineage transition is also invalid.
+
+Possible platform mechanisms must be evaluated only after the deployment topology is selected.
+
+### 28.9 Qualification consequence
+
+Passing this synthetic epoch gate proves the profile has a coherent defense against database-restore ABA **if and only if** the production restore/clone procedure enforces external epoch rotation before traffic resumes.
+
+It does not yet prove that any selected cloud/platform control plane actually enforces that procedure.
