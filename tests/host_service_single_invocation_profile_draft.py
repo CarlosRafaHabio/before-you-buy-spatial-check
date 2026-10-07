@@ -14,7 +14,7 @@ from threading import RLock
 from uuid import uuid4
 
 from spatial_check import evaluate
-from spatial_check.contracts import RESULT_SCHEMA, validate
+from spatial_check.contracts import INPUT_SCHEMA, RESULT_SCHEMA, validate
 from spatial_check.trust import HostIntake, LifecycleRegistry, claim_from_data
 
 
@@ -103,6 +103,7 @@ class SyntheticExternalAuthority:
         self.active = True
         self._reviews = {}
         self._current_review_event_id = None
+        self._latest_review_event_id = None
         self._install_review(
             evidence,
             request,
@@ -199,6 +200,7 @@ class SyntheticExternalAuthority:
         )
         self._reviews[review_event_id] = review
         self._current_review_event_id = review_event_id
+        self._latest_review_event_id = review_event_id
         return review
 
     def _verify_review_binding(self, review):
@@ -292,7 +294,9 @@ class SyntheticExternalAuthority:
         review_event_id=None,
     ):
         with self._lock:
-            current = self._reviews[self._current_review_event_id]
+            if self._latest_review_event_id is None:
+                raise ProfileContractError("No reviewed state exists.")
+            current = self._reviews[self._latest_review_event_id]
             next_evidence = json.loads(current.evidence_payload) if evidence is None else deepcopy(evidence)
             next_request = (
                 json.loads(current.effective_request_canonical)
@@ -418,6 +422,19 @@ class SingleInvocationHost:
         if _sha256(claim.payload) != reviewed.evidence_digest:
             raise ProfileContractError("Canonical claim digest differs from reviewed digest.")
 
+        request = json.loads(reviewed.effective_request_canonical)
+        if validate(request, INPUT_SCHEMA):
+            raise ProfileContractError("Reviewed effective request is malformed.")
+        if (
+            request["case_id"] != reviewed.case_id
+            or request["revision"] != reviewed.revision
+            or request["room"]["identity"] != reviewed.room_identity
+            or request["item"]["identity"] != reviewed.item_identity
+        ):
+            raise ProfileContractError(
+                "Effective request scope differs from reviewed authority."
+            )
+
         registry = LifecycleRegistry()
         intake = HostIntake(registry)
         receipt = intake.confirm(
@@ -432,7 +449,6 @@ class SingleInvocationHost:
         if after_confirm is not None:
             after_confirm()
 
-        request = json.loads(reviewed.effective_request_canonical)
         result = self.evaluator(request, receipt)
 
         if after_evaluate is not None:
