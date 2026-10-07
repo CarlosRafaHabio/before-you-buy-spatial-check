@@ -162,7 +162,7 @@ class SingleInvocationProfileDraftTests(unittest.TestCase):
                 evidence_digest=old_review.evidence_digest,
             )
 
-    def test_S06_revocation_blocks_readmission_and_silent_revival(self):
+    def test_S06_revocation_blocks_old_review_but_allows_new_explicit_review(self):
         authority, host, request, evidence, review = self.fixture()
         authority.revoke_current_review()
 
@@ -174,6 +174,16 @@ class SingleInvocationProfileDraftTests(unittest.TestCase):
             )
         with self.assertRaises(ProfileContractError):
             authority.reactivate_historical_review(review.review_event_id)
+
+        authority.transition_review(
+            evidence=evidence,
+            request=request,
+            revision="r2",
+            review_event_id="review-after-revocation",
+        )
+        current = self.evaluate_current(authority, host)
+        self.assertEqual(current["review_event_id"], "review-after-revocation")
+        self.assertEqual(current["revision"], "r2")
 
     def test_S07_old_review_replay_fails_after_new_review(self):
         authority, host, request, evidence, old_review = self.fixture()
@@ -243,6 +253,29 @@ class SingleInvocationProfileDraftTests(unittest.TestCase):
 
         with self.assertRaises(ProfileContractError):
             self.evaluate_current(authority, host)
+
+
+    def test_S10b_reviewed_request_scope_mismatch_is_refused_before_evaluate(self):
+        authority, host, request, evidence, review = self.fixture()
+        calls = {"evaluate": 0}
+        mismatched_request = deepcopy(request)
+        mismatched_request["item"]["identity"] = "other-item"
+
+        authority.transition_review(
+            evidence=evidence,
+            request=mismatched_request,
+            revision="r2",
+            review_event_id="review-bad-request-scope",
+        )
+
+        def counted(request, receipt):
+            calls["evaluate"] += 1
+            return evaluate(request, receipt)
+
+        guarded = SingleInvocationHost(authority, evaluator=counted)
+        with self.assertRaises(ProfileContractError):
+            self.evaluate_current(authority, guarded)
+        self.assertEqual(calls["evaluate"], 0)
 
     def test_S11_change_during_evaluation_blocks_current_handoff(self):
         authority, host, request, evidence, review = self.fixture()
