@@ -45,6 +45,7 @@ jobs:
           test -f "$SDIST_ROOT/security_monty/test_h14_durable_claim.py"
           test -f "$SDIST_ROOT/prototypes/camel_selective_v0/signed_approval_v0.py"
           test -f "$SDIST_ROOT/security_monty/test_h15_signed_approval.py"
+          test -f "$SDIST_ROOT/security_monty/test_h16_integrated_authority_cutset.py"
           cd "$SDIST_ROOT"
           python -m unittest discover -s tests -v
           mkdir -p "$RUNNER_TEMP/rebuilt-wheel"
