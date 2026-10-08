@@ -28,7 +28,7 @@ class H8ContainerTests(unittest.TestCase):
         cls.host_private = cls.root / "host-private"
         cls.host_private.mkdir(mode=0o700)
         (cls.host_private / "synthetic-canary.txt").write_text("SYNTHETIC_HOST_PRIVATE")
-        os.chmod(cls.root, 0o755)
+        # Keep the temporary root private (0700); Docker daemon binds only ipc.
         cls.path = str(cls.ipc / "adapter.sock")
         cls.checkout = Path(__file__).resolve().parents[1]
         cls.adapter = subprocess.Popen(
@@ -45,7 +45,7 @@ class H8ContainerTests(unittest.TestCase):
             time.sleep(.02)
         else:
             raise RuntimeError("H7 synthetic adapter socket never bound")
-        os.chmod(cls.path, 0o666)  # intentional test-only world-writable socket
+        os.chmod(cls.path, 0o660)  # restricted group access only, no world bits
 
     @classmethod
     def tearDownClass(cls):
@@ -64,6 +64,8 @@ class H8ContainerTests(unittest.TestCase):
             "--network=none", "--read-only", "--cap-drop=ALL",
             "--security-opt=no-new-privileges", "--pids-limit=32",
             "--memory=192m", "--cpus=1", "--user=65534:65534",
+            # Deliberate single synthetic socket group access, not an OS auth claim.
+            "--group-add", str(os.stat(self.path).st_gid),
             "--tmpfs=/tmp:rw,noexec,nosuid,size=4m",
             "--mount", "type=bind,src=" + str(self.ipc) + ",dst=/ipc,readonly",
             "--workdir=/", IMAGE, "python", "-c", code,
