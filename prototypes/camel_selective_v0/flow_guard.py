@@ -159,7 +159,8 @@ class FlowGuard:
         for rule in operations:
             if type(rule) is not Operation or rule.name in rules:
                 raise FlowInputError("Invalid or duplicate operation.")
-            rules[rule.name] = rule
+            # Copy the validated policy: no retained caller-owned Operation alias.
+            rules[rule.name] = Operation(rule.name, rule.kind, rule.destination)
         self._rules = MappingProxyType(rules)
 
     def check(self, operation: str, *,

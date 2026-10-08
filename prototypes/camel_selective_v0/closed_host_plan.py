@@ -103,43 +103,61 @@ class ClosedHostExecutor:
                 or type(plan.arguments) is not tuple
                 or not (1 <= len(plan.arguments) <= _MAX_ARGUMENTS)):
             raise FlowInputError("Invalid closed-host registration.")
-        slot_names = {s.name for s in slots}
-        if len(slot_names) != len(slots):
+        # Compile from caller-owned objects into independent, validated trees.
+        # All later invocations use ONLY our copies, not mutable aliases.
+        slot_snapshots = tuple(
+            ExternalSlot(s.name, s.origin, s.readers) for s in slots
+        )
+        slot_names = {s.name for s in slot_snapshots}
+        if len(slot_names) != len(slot_snapshots):
             raise FlowInputError("Duplicate untrusted source slot.")
         nodes = [0]
-        for expr in plan.arguments:
-            self._validate_expr(expr, slot_names, nodes, 0)
-        self._slots = {s.name: s for s in slots}
-        self._plan = plan
+        expressions = tuple(
+            self._compile_expr(expr, slot_names, nodes, 0)
+            for expr in plan.arguments
+        )
+        self._slots = {s.name: s for s in slot_snapshots}
+        self._plan = HostPlan(plan.operation, expressions)
         self._dispatcher = BoundHostDispatcher((tool,))
 
     @classmethod
-    def _validate_expr(cls, expr: object, names: set[str],
-                       nodes: list[int], depth: int) -> None:
+    def _compile_expr(cls, expr: object, names: set[str],
+                      nodes: list[int], depth: int) -> object:
+        """Validate and copy at once; never retain the caller's AST nodes."""
         nodes[0] += 1
         if nodes[0] > _MAX_NODES or depth > _MAX_DEPTH:
             raise FlowInputError("Host plan exceeds safe structural limits.")
         if type(expr) is Literal:
-            host_text(expr.value, origin="host.program")
-        elif type(expr) is Source:
-            if not _name(expr.name) or expr.name not in names:
+            value = expr.value
+            host_text(value, origin="host.program")
+            return Literal(value)
+        if type(expr) is Source:
+            name = expr.name
+            if not _name(name) or name not in names:
                 raise FlowInputError("Source absent from host manifest.")
-        elif type(expr) is Join:
-            if (type(expr.parts) is not tuple or
-                    not (1 <= len(expr.parts) <= _MAX_ARGUMENTS)):
+            return Source(name)
+        if type(expr) is Join:
+            parts = expr.parts
+            if (type(parts) is not tuple
+                    or not (1 <= len(parts) <= _MAX_ARGUMENTS)):
                 raise FlowInputError("Invalid host-plan join.")
-            for value in expr.parts:
-                cls._validate_expr(value, names, nodes, depth + 1)
-        elif type(expr) is Choose:
-            if type(expr.condition) is not Equals:
+            return Join(tuple(
+                cls._compile_expr(value, names, nodes, depth + 1)
+                for value in parts
+            ))
+        if type(expr) is Choose:
+            condition = expr.condition
+            if type(condition) is not Equals:
                 raise FlowInputError("Only declared equality predicates supported.")
             nodes[0] += 1
-            cls._validate_expr(expr.condition.left, names, nodes, depth + 1)
-            cls._validate_expr(expr.condition.right, names, nodes, depth + 1)
-            cls._validate_expr(expr.when_true, names, nodes, depth + 1)
-            cls._validate_expr(expr.when_false, names, nodes, depth + 1)
-        else:
-            raise FlowInputError("No arbitrary calls, code or expressions allowed.")
+            if nodes[0] > _MAX_NODES:
+                raise FlowInputError("Host plan exceeds safe structural limits.")
+            left = cls._compile_expr(condition.left, names, nodes, depth + 1)
+            right = cls._compile_expr(condition.right, names, nodes, depth + 1)
+            true_branch = cls._compile_expr(expr.when_true, names, nodes, depth + 1)
+            false_branch = cls._compile_expr(expr.when_false, names, nodes, depth + 1)
+            return Choose(Equals(left, right), true_branch, false_branch)
+        raise FlowInputError("No arbitrary calls, code or expressions allowed.")
 
     @classmethod
     def _evaluate(cls, expr: object, inputs: dict[str, FlowText]) -> FlowText:
@@ -159,15 +177,17 @@ class ClosedHostExecutor:
 
     def invoke(self, raw_inputs: dict[str, str]) -> DispatchOutcome:
         """Execute trusted, pre-registered plan with raw UNTRUSTED slot values."""
-        if (type(raw_inputs) is not dict or
-                raw_inputs.keys() != self._slots.keys() or
-                any(type(s) is not str for s in raw_inputs.values())):
+        if type(raw_inputs) is not dict:
+            return DispatchOutcome(False, "DENY_INPUT_MANIFEST_MISMATCH")
+        # Copy caller-supplied mapping before validation and lookup.
+        values = raw_inputs.copy()
+        if (values.keys() != self._slots.keys()
+                or any(type(s) is not str for s in values.values())):
             return DispatchOutcome(False, "DENY_INPUT_MANIFEST_MISMATCH")
         try:
             inputs = {
-                key: external_text(value, origin=slot.origin, readers=slot.readers)
+                key: external_text(values[key], origin=slot.origin, readers=slot.readers)
                 for key, slot in self._slots.items()
-                for value in (raw_inputs[key],)
             }
             arguments = tuple(
                 self._evaluate(expr, inputs) for expr in self._plan.arguments

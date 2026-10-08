@@ -57,7 +57,10 @@ class BoundHostDispatcher:
         for tool in tools:
             if type(tool) is not BoundTool or tool.name in registered:
                 raise FlowInputError("Invalid or duplicate tool registration.")
-            registered[tool.name] = tool
+            # Snapshot registration; caller may retain/mutate their BoundTool.
+            registered[tool.name] = BoundTool(
+                tool.name, tool.destination, tool.handler,
+            )
         self._tools = MappingProxyType(registered)
         self._guard = FlowGuard(
             Operation(x.name, "external", x.destination)
