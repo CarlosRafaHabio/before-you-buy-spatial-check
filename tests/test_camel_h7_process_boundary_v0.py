@@ -147,6 +147,37 @@ class ProcessBoundaryH7Tests(unittest.TestCase):
         self.assertEqual(sum(x["code"] == "DENY_REPLAY_PROCESS_LOCAL"
                              for x in decisions), 23)
 
+    def test_H7_12_inherited_parent_connected_fd_bypasses_peer_pid_guard(self):
+        # KNOWN UNSAFE TCB PRECONDITION: a compromised or careless trusted
+        # parent explicitly hands a PRE-CONNECTED socket FD to untrusted code.
+        # Linux SO_PEERCRED retains the credentials of the connecting process,
+        # not the current user of the inherited/SCM_RIGHTS-passed descriptor.
+        # Test demonstrates why peer PID != secure capability isolation.
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as parent_sock:
+            parent_sock.settimeout(3.0)
+            parent_sock.connect(self.path)  # peer credentials: TRUSTED parent
+            script = (
+                "import json,socket,sys;"
+                "conn=socket.socket(fileno=int(sys.argv[1]));"
+                "conn.settimeout(3);"
+                "conn.sendall(b'{\"user_id\":\"USR-0042\"}\\n');"
+                "print(conn.recv(1024).decode().strip())"
+            )
+            agent = subprocess.run(
+                [sys.executable, "-c", script, str(parent_sock.fileno())],
+                pass_fds=(parent_sock.fileno(),),
+                cwd=str(Path(__file__).resolve().parents[1]),
+                stdin=subprocess.DEVNULL, capture_output=True, text=True,
+                timeout=8, check=True,
+            )
+        observed = json.loads(agent.stdout)
+        self.assertEqual(observed,
+                         {"attempted": True, "code": "HANDLER_RETURNED"})
+        # The untrusted child consumed authorization if trusted host leaks a
+        # live socket. These tests intentionally PASS on insecure behavior.
+        self.assertEqual(self.trusted({"user_id": "USR-0042"})["code"],
+                         "DENY_REPLAY_PROCESS_LOCAL")
+
     def test_H7_11_malformed_wire_cannot_reveal_raw_exception(self):
         response = request_raw(
             self.path, b'{"user_id":"USR-0042","exfil":"SYNTHETIC_SECRET"}\n',
