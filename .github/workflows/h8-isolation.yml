@@ -32,10 +32,10 @@ jobs:
       - name: Pull only public synthetic Python image and log its immutable digest
         run: |
           set -euo pipefail
-          docker pull python:3.12-alpine
-          docker image inspect python:3.12-alpine --format 'H8_TEST_IMAGE_DIGEST={{index .RepoDigests 0}}'
+          docker pull python@sha256:1b668429b3511ab407d8e00648891631b0b1a4d7e15e3ca70f38ab5b91ad4ab4
+          docker image inspect python@sha256:1b668429b3511ab407d8e00648891631b0b1a4d7e15e3ca70f38ab5b91ad4ab4 --format 'H8_TEST_IMAGE_DIGEST={{index .RepoDigests 0}}'
       - name: Execute offline process/namespace boundary proof
         env:
           CAMEL_H8_ENABLED: '1'
-          CAMEL_H8_IMAGE: python:3.12-alpine
+          CAMEL_H8_IMAGE: python@sha256:1b668429b3511ab407d8e00648891631b0b1a4d7e15e3ca70f38ab5b91ad4ab4
         run: python -m unittest discover -s security_isolation -p 'test_*.py' -v
