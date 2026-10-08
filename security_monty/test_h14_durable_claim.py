@@ -3,6 +3,7 @@
 All grants are synthetic HOST-CHOSEN. Green negative witnesses expose
 missing authentication and provider idempotency, not guarantees.
 """
+import gc
 import os
 from pathlib import Path
 import sqlite3
@@ -10,6 +11,7 @@ import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
 import tempfile
+from unittest.mock import MagicMock, patch
 import unittest
 
 from prototypes.camel_selective_v0.durable_claim_v0 import (
@@ -337,6 +339,65 @@ class H14DurableLedger(unittest.TestCase):
         self.assertEqual(again.code, "DISPATCH_CONFIRMED")
         self.assertEqual(self.effects(), EFFECT * 2)  # negative proof
 
+
+
+    def test_H14_21_100_inspects_close_connection_without_gc(self):
+        # Independent audit F05/P09 previously saw 4 -> 104 open FDs
+        # when GC was disabled. This is a positive regression.
+        if not Path("/proc/self/fd").is_dir():
+            self.skipTest("Linux procfd instrumentation unavailable")
+        self.grant()
+        before = len(list(Path("/proc/self/fd").iterdir()))
+        was_enabled = gc.isenabled()
+        gc.disable()
+        try:
+            for _ in range(100):
+                self.assertEqual(self.ledger.inspect(SCOPE), "GRANTED")
+            after = len(list(Path("/proc/self/fd").iterdir()))
+            self.assertLessEqual(
+                after - before, 2,
+                f"SQLite connection FDs accumulated: {before} -> {after}",
+            )
+        finally:
+            if was_enabled:
+                gc.enable()
+            gc.collect()
+
+    def test_H14_22_pragma_initialization_failure_closes_connection(self):
+        # A PRAGMA may fail after sqlite3.connect creates the handle.
+        # The context manager must close that handle before raising.
+        fake = MagicMock()
+        fake.execute.side_effect = sqlite3.OperationalError(
+            "SYNTHETIC_PRAGMA_FAILURE"
+        )
+        with patch(
+            "prototypes.camel_selective_v0.durable_claim_v0.sqlite3.connect",
+            return_value=fake,
+        ):
+            with self.assertRaisesRegex(
+                sqlite3.OperationalError, "SYNTHETIC_PRAGMA_FAILURE"
+            ):
+                with self.ledger._connect():
+                    self.fail("PRAGMA failure must precede yield")
+        fake.close.assert_called_once()
+
+    def test_H14_23_exception_rolls_back_and_closes_ledger(self):
+        # Preserve prior sqlite3.Connection transaction semantics while
+        # closing deterministically on exception.
+        self.grant()
+        with self.assertRaisesRegex(RuntimeError, "synthetic abort"):
+            with self.ledger._connect() as db:
+                db.execute("BEGIN IMMEDIATE")
+                db.execute(
+                    "UPDATE dispatch_claims SET state='CLAIMED' "
+                    "WHERE grant_id=?", (SCOPE.grant_id,),
+                )
+                raise RuntimeError("synthetic abort")
+        self.assertEqual(self.ledger.inspect(SCOPE), "GRANTED")
+        self.assertEqual(
+            self.ledger.claim(SCOPE, raw_user_id=SCOPE.user_id).code,
+            "CLAIM_ACQUIRED",
+        )
 
 
 if __name__ == "__main__":

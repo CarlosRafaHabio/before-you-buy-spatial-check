@@ -9,13 +9,14 @@ All effects are test-only, no network, no real identities or secrets.
 """
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 import os
 import stat
 import re
 import sqlite3
-from typing import Literal
+from typing import Iterator, Literal
 
 from .isolated_broker_v0 import BrokerOutcome, run_synthetic_broker
 
@@ -76,7 +77,8 @@ class DurableClaimV0:
                 "UNIQUE(epoch,user_id,operation))"
             )
 
-    def _connect(self) -> sqlite3.Connection:
+    @contextmanager
+    def _connect(self) -> Iterator[sqlite3.Connection]:
         # SQLite's default O_CREAT respects umask but often produces 0644.
         # Create with explicit mode 0600 BEFORE SQLite opens the path.
         # O_NOFOLLOW excludes symlink substitution of the authority file.
@@ -94,10 +96,17 @@ class DurableClaimV0:
             os.close(fd)
         conn = sqlite3.connect(str(self._path), timeout=10.0,
                                isolation_level=None)
-        conn.execute("PRAGMA busy_timeout=10000")
-        conn.execute("PRAGMA synchronous=FULL")
-        conn.execute("PRAGMA journal_mode=DELETE")
-        return conn
+        try:
+            conn.execute("PRAGMA busy_timeout=10000")
+            conn.execute("PRAGMA synchronous=FULL")
+            conn.execute("PRAGMA journal_mode=DELETE")
+            # Connection.__exit__ commits/rolls back but does NOT close.
+            # Maintain both transaction semantics and deterministic closure
+            # even after early returns, exceptions, or failed PRAGMAs.
+            with conn:
+                yield conn
+        finally:
+            conn.close()
 
     def grant(self, scope: GrantScope) -> ClaimResult:
         """Trusted host registration; prevent second grant for same epoch/id."""
