@@ -1,0 +1,41 @@
+name: H8 OS isolation proof (experimental branch only)
+
+on:
+  push:
+    branches:
+      - experiment/camel-selective-flow-guard-v0
+
+permissions:
+  contents: read
+
+concurrency:
+  group: h8-os-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux-container-boundary:
+    name: H8 unprivileged container and host-tool denial
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - name: Verify Docker engine and security settings
+        run: |
+          set -euo pipefail
+          docker version
+          docker info --format 'Docker server {{.ServerVersion}}; security {{json .SecurityOptions}}'
+      - name: Pull only public synthetic Python image and log its immutable digest
+        run: |
+          set -euo pipefail
+          docker pull python@sha256:1b668429b3511ab407d8e00648891631b0b1a4d7e15e3ca70f38ab5b91ad4ab4
+          docker image inspect python@sha256:1b668429b3511ab407d8e00648891631b0b1a4d7e15e3ca70f38ab5b91ad4ab4 --format 'H8_TEST_IMAGE_DIGEST={{index .RepoDigests 0}}'
+      - name: Execute offline process/namespace boundary proof
+        env:
+          CAMEL_H8_ENABLED: '1'
+          CAMEL_H8_IMAGE: python@sha256:1b668429b3511ab407d8e00648891631b0b1a4d7e15e3ca70f38ab5b91ad4ab4
+        run: python -m unittest discover -s security_isolation -p 'test_*.py' -v
