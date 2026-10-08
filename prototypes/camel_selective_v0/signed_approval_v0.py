@@ -106,22 +106,13 @@ class PublicApprovalVerifier:
         except (ValueError, UnicodeError, TypeError, OverflowError):
             return Verification("DENY_MALFORMED_APPROVAL")
 
-        # Bound exact trusted audience/operation/types before evaluating any
-        # grant effect. Signature verification is mandatory on a known key.
-        if (type(fields["v"]) is not int or fields["v"] != 1
-                or type(fields["key_id"]) is not str
-                or _KEY_ID.fullmatch(fields["key_id"]) is None
-                or type(fields["operation"]) is not str
-                or fields["operation"] != _OPERATION
-                or type(fields["audience"]) is not str
-                or fields["audience"] != _AUDIENCE
-                or type(fields["context_sha256"]) is not str
-                or _SHA.fullmatch(fields["context_sha256"]) is None
-                or type(fields["actor_claim"]) is not str
-                or _ACTOR.fullmatch(fields["actor_claim"]) is None
-                or type(fields["issued_at"]) is not int
-                or type(fields["expires_at"]) is not int):
-            return Verification("DENY_APPROVAL_SCOPE")
+        # Only parse/lookup the issuer key ID before verifying signed bytes.
+        # Every other claim must be evaluated AFTER verification, so an
+        # attacker changing a previously signed operation/audience/user
+        # cannot make the verifier treat unverified text as scope evidence.
+        if (type(fields["key_id"]) is not str
+                or _KEY_ID.fullmatch(fields["key_id"]) is None):
+            return Verification("DENY_MALFORMED_APPROVAL")
         key_bytes = self._keys.get(fields["key_id"])
         if key_bytes is None:
             return Verification("DENY_UNKNOWN_ISSUER")
@@ -138,6 +129,20 @@ class PublicApprovalVerifier:
         except (ValueError, TypeError):
             return Verification("DENY_MALFORMED_APPROVAL")
 
+        # After signature verification, the trusted issuer's FULL signed
+        # assertions can be checked for the fixed host policy.
+        if (type(fields["v"]) is not int or fields["v"] != 1
+                or type(fields["operation"]) is not str
+                or fields["operation"] != _OPERATION
+                or type(fields["audience"]) is not str
+                or fields["audience"] != _AUDIENCE
+                or type(fields["context_sha256"]) is not str
+                or _SHA.fullmatch(fields["context_sha256"]) is None
+                or type(fields["actor_claim"]) is not str
+                or _ACTOR.fullmatch(fields["actor_claim"]) is None
+                or type(fields["issued_at"]) is not int
+                or type(fields["expires_at"]) is not int):
+            return Verification("DENY_APPROVAL_SCOPE")
         if fields["context_sha256"] != expected_context_sha256:
             return Verification("DENY_CONTEXT_MISMATCH")
         if (fields["issued_at"] > now_utc
