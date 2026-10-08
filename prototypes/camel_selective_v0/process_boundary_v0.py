@@ -13,6 +13,8 @@ No externally supplied Python code is interpreted or loaded by this module.
 from __future__ import annotations
 
 import argparse
+import errno
+import time
 import json
 import os
 import socket
@@ -51,6 +53,7 @@ def _unique_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
 class _LocalAdapter(socketserver.ThreadingMixIn, socketserver.UnixStreamServer):
     daemon_threads = True
     allow_reuse_address = False
+    request_queue_size = 128  # accept bounded concurrent synthetic clients
 
     def __init__(self, path: str, approved_id: str, parent_pid: int):
         self.bound_parent_pid = parent_pid
@@ -117,7 +120,17 @@ def request_raw(
         raise TypeError("Unix client requires socket path and bytes.")
     with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as conn:
         conn.settimeout(3.0)
-        conn.connect(path)
+        # Linux AF_UNIX can signal EAGAIN under transient connection-backlog
+        # pressure. Retrying connect does not retry a tool execution: no
+        # request bytes have been sent and the adapter has not dispatched.
+        for attempt in range(20):
+            try:
+                conn.connect(path)
+                break
+            except OSError as exc:
+                if exc.errno not in (errno.EAGAIN, errno.EWOULDBLOCK) or attempt == 19:
+                    raise
+                time.sleep(0.01)
         if expected_server_pid is not None and _peer_pid(conn) != expected_server_pid:
             return {"attempted": False, "code": "DENY_SERVER_PID"}
         conn.sendall(wire)
