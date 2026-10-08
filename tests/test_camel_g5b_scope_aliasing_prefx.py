@@ -4,7 +4,6 @@ Pre-fix behavior preserved at commit aa76058e915c2078fac19ed698ec95872e2853ad.
 Green tests of direct same-process bypasses do NOT prove isolation.
 """
 import unittest
-from dataclasses import FrozenInstanceError
 
 from prototypes.camel_selective_v0.scoped_data_use_v0 import HostScopedUserLookup
 
@@ -14,7 +13,7 @@ class PreFixScopeMutationWitnesses(unittest.TestCase):
         calls = []
         gate = HostScopedUserLookup(approved_user_id="USR-0042",
                                     handler=lambda args: calls.append(args))
-        with self.assertRaises(FrozenInstanceError):
+        with self.assertRaises(AttributeError):
             gate._approved_user_id = "USR-9999"
         self.assertEqual(gate.invoke("USR-9999").code, "DENY_OUT_OF_SCOPE")
         self.assertEqual(gate.invoke("USR-0042").code, "HANDLER_RETURNED")
@@ -24,7 +23,7 @@ class PreFixScopeMutationWitnesses(unittest.TestCase):
         original, swapped = [], []
         gate = HostScopedUserLookup(approved_user_id="USR-0042",
                                     handler=lambda args: original.append(args))
-        with self.assertRaises(FrozenInstanceError):
+        with self.assertRaises(AttributeError):
             gate._handler = lambda args: swapped.append(args)
         self.assertEqual(gate.invoke("USR-0042").code, "HANDLER_RETURNED")
         self.assertEqual(original, [("USR-0042",)])
@@ -35,7 +34,7 @@ class PreFixScopeMutationWitnesses(unittest.TestCase):
         gate = HostScopedUserLookup(approved_user_id="USR-0042",
                                     handler=lambda args: calls.append(args))
         self.assertTrue(gate.invoke("USR-0042").attempted)
-        with self.assertRaises(FrozenInstanceError):
+        with self.assertRaises(AttributeError):
             gate._used = False
         self.assertEqual(gate.invoke("USR-0042").code,
                          "DENY_REPLAY_PROCESS_LOCAL")

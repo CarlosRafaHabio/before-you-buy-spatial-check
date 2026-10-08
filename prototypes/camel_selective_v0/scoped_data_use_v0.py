@@ -40,7 +40,7 @@ class _ProcessLocalAttemptState:
         self.used = False
 
 
-@dataclass(frozen=True, slots=True, init=False)
+@dataclass(slots=True, init=False)
 class HostScopedUserLookup:
     """Exactly one permitted lookup of an independently host-approved USER id.
 
@@ -50,10 +50,15 @@ class HostScopedUserLookup:
     The callback is entirely inside the TCB and is NOT isolated by this object.
     """
 
-    # Frozen against accidental normal reassignment, not Python reflection.
+    # Ordinary Python writes are rejected; arbitrary Python reflection is not blocked.
     _approved_user_id: str = field(repr=False)
     _handler: Callable[[tuple[str, ...]], None] = field(repr=False)
     _state: _ProcessLocalAttemptState = field(repr=False, compare=False)
+
+    def __setattr__(self, name: str, value: object) -> None:
+        """Block all ordinary writes, including nonexistent attributes."""
+        raise AttributeError("Scoped registration is immutable after bootstrap.")
+
 
     def __init__(
         self,
