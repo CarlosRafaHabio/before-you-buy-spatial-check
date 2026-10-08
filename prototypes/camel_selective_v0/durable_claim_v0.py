@@ -11,6 +11,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import os
+import stat
 import re
 import sqlite3
 from typing import Literal
@@ -58,6 +60,10 @@ class DurableClaimV0:
                 or path.suffix != ".sqlite3"
                 or not path.parent.is_dir()):
             raise ValueError("Trusted host must select an absolute SQLite file.")
+        # The caller must allocate a PRIVATE trusted directory. Do not
+        # create an authority database in a world-readable path.
+        if os.name == "posix" and path.parent.stat().st_mode & 0o077:
+            raise ValueError("Host ledger directory must be owner-private.")
         self._path = path
         with self._connect() as db:
             db.execute(
@@ -71,8 +77,21 @@ class DurableClaimV0:
             )
 
     def _connect(self) -> sqlite3.Connection:
-        # The SQLite file MUST be in a host-private trusted directory.
-        # SQLite mode=rw? no: owner-created DB file in parent private dir.
+        # SQLite's default O_CREAT respects umask but often produces 0644.
+        # Create with explicit mode 0600 BEFORE SQLite opens the path.
+        # O_NOFOLLOW excludes symlink substitution of the authority file.
+        flags = os.O_RDWR | os.O_CREAT
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        fd = os.open(self._path, flags, 0o600)
+        try:
+            mode = os.fstat(fd).st_mode
+            if not stat.S_ISREG(mode):
+                raise ValueError("Authority DB must be a regular file.")
+            if os.name == "posix" and mode & 0o077:
+                raise ValueError("Authority DB has excessive permissions.")
+        finally:
+            os.close(fd)
         conn = sqlite3.connect(str(self._path), timeout=10.0,
                                isolation_level=None)
         conn.execute("PRAGMA busy_timeout=10000")
