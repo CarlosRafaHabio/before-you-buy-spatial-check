@@ -63,7 +63,7 @@ def run_synthetic_broker(*, mode: str, scratch_log: Path,
         return BrokerOutcome("BROKER_PLATFORM_UNSUPPORTED")
     if type(mode) is not str or mode not in _MODES:
         return BrokerOutcome("DENY_BROKER_MODE")
-    if (type(scratch_log) is not Path or not scratch_log.is_absolute()
+    if (not isinstance(scratch_log, Path) or not scratch_log.is_absolute()
             or not scratch_log.parent.is_dir()):
         return BrokerOutcome("DENY_BROKER_TARGET")
     if (type(timeout_secs) not in (float, int)
