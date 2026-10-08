@@ -122,7 +122,7 @@ class ClosedHostExecutor:
         if type(expr) is Literal:
             host_text(expr.value, origin="host.program")
         elif type(expr) is Source:
-            if expr.name not in names:
+            if not _name(expr.name) or expr.name not in names:
                 raise FlowInputError("Source absent from host manifest.")
         elif type(expr) is Join:
             if (type(expr.parts) is not tuple or
