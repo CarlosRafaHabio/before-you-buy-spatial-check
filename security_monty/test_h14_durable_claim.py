@@ -275,5 +275,69 @@ class H14DurableLedger(unittest.TestCase):
         self.assertEqual(self.effects(), b"")
 
 
+    def test_H14_18_real_concurrent_process_dispatch_produces_only_one_effect(self):
+        self.grant()
+        root = str(Path(__file__).resolve().parents[1])
+        script = (
+            "import sys;"
+            "from pathlib import Path;"
+            "from prototypes.camel_selective_v0.durable_claim_v0 "
+            "import DurableClaimV0,GrantScope,dispatch_synthetic_once;"
+            "s=GrantScope('GR-0123456789abcdef','EP-000042','USR-0042');"
+            "r=dispatch_synthetic_once(DurableClaimV0(Path(sys.argv[1])),s,"
+            "raw_user_id=s.user_id,broker_mode='write_return',"
+            "scratch_log=Path(sys.argv[2]),timeout_secs=3);"
+            "print(r.code)"
+        )
+        def attempt(_):
+            proc = subprocess.run(
+                [sys.executable, "-c", script, str(self.db_path),
+                 str(self.effect_path)],
+                cwd=root, stdin=subprocess.DEVNULL,
+                capture_output=True, text=True, check=True, timeout=12,
+            )
+            return proc.stdout.strip()
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            replies = list(pool.map(attempt, range(12)))
+        self.assertEqual(replies.count("DISPATCH_CONFIRMED"), 1)
+        self.assertEqual(replies.count("DENY_ALREADY_CONSUMED"), 11)
+        self.assertEqual(self.effects(), EFFECT)
+        self.assertEqual(self.ledger.inspect(SCOPE), "CONFIRMED")
+
+    def test_H14_19_symlink_substitution_of_sqlite_path_rejected(self):
+        if not hasattr(os, "O_NOFOLLOW"):
+            self.skipTest("No O_NOFOLLOW")
+        victim = self.dir / "synthetic-other.db"
+        victim.write_text("SYNTHETIC_DO_NOT_MODIFY", encoding="utf-8")
+        self.db_path.unlink()
+        self.db_path.symlink_to(victim)
+        with self.assertRaises(OSError):
+            DurableClaimV0(self.db_path)
+        self.assertEqual(victim.read_text(encoding="utf-8"),
+                         "SYNTHETIC_DO_NOT_MODIFY")
+
+    def test_H14_20_owner_deleting_ledger_can_recreate_grant_negative(self):
+        # NEGATIVE: same-UID trusted/malicious host can erase the entire
+        # database; SQLite is not an independent authorization authority.
+        self.grant()
+        first = dispatch_synthetic_once(
+            self.ledger, SCOPE, raw_user_id=SCOPE.user_id,
+            broker_mode="write_return", scratch_log=self.effect_path,
+            timeout_secs=2
+        )
+        self.assertEqual(first.code, "DISPATCH_CONFIRMED")
+        self.db_path.unlink()  # PRIVILEGED host-level tamper precondition
+        recreated = DurableClaimV0(self.db_path)
+        self.assertEqual(recreated.grant(SCOPE).code, "GRANT_REGISTERED")
+        again = dispatch_synthetic_once(
+            recreated, SCOPE, raw_user_id=SCOPE.user_id,
+            broker_mode="write_return", scratch_log=self.effect_path,
+            timeout_secs=2
+        )
+        self.assertEqual(again.code, "DISPATCH_CONFIRMED")
+        self.assertEqual(self.effects(), EFFECT * 2)  # negative proof
+
+
+
 if __name__ == "__main__":
     unittest.main()
