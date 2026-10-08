@@ -1,0 +1,24 @@
+name: H8 CodeQL annotation diagnosis (experimental)
+
+on:
+  push:
+    branches:
+      - experiment/camel-selective-flow-guard-v0
+
+permissions:
+  contents: read
+  checks: read
+
+jobs:
+  diagnose-previous-codeql-alerts:
+    name: Inspect two reported high severity annotations
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Read exact prior GitHub CodeQL annotations (public repo)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api --paginate "repos/CarlosRafaHabio/before-you-buy-spatial-check/check-runs/113445551236/annotations" \
+            --jq '.[] | {path, start_line, end_line, title, annotation_level, message}'
