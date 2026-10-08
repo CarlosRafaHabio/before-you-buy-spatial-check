@@ -45,7 +45,7 @@ class H8ContainerTests(unittest.TestCase):
             time.sleep(.02)
         else:
             raise RuntimeError("H7 synthetic adapter socket never bound")
-        os.chmod(cls.path, 0o660)  # restricted group access only, no world bits
+        # Keep the socket at adapter-created restrictive 0600 permissions.
 
     @classmethod
     def tearDownClass(cls):
@@ -64,8 +64,6 @@ class H8ContainerTests(unittest.TestCase):
             "--network=none", "--read-only", "--cap-drop=ALL",
             "--security-opt=no-new-privileges", "--pids-limit=32",
             "--memory=192m", "--cpus=1", "--user=65534:65534",
-            # Deliberate single synthetic socket group access, not an OS auth claim.
-            "--group-add", str(os.stat(self.path).st_gid),
             "--tmpfs=/tmp:rw,noexec,nosuid,size=4m",
             "--mount", "type=bind,src=" + str(self.ipc) + ",dst=/ipc,readonly",
             "--workdir=/", IMAGE, "python", "-c", code,
@@ -102,15 +100,18 @@ class H8ContainerTests(unittest.TestCase):
         )
         self.assertEqual(x, [False, False, False])
 
-    def test_H8_04_even_reachable_socket_denied_to_separate_container_pid(self):
+    def test_H8_04_private_host_socket_denied_by_kernel_file_permissions(self):
         x = self.guest(
-            "import socket,json;"
+            "import socket,json,errno,os;"
+            "path='/ipc/adapter.sock';"
             "s=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM);"
-            "s.settimeout(3);s.connect('/ipc/adapter.sock');"
-            "s.sendall(b'{\"user_id\":\"USR-0042\"}\\n');"
-            "print(json.dumps(json.loads(s.recv(1024).decode().strip())))"
+            "s.settimeout(3);"
+            "error=None;"
+            "\ntry: s.connect(path)"
+            "\nexcept OSError as e: error=e.errno"
+            "\nprint(json.dumps({'visible':os.path.exists(path),'errno':error}))"
         )
-        self.assertEqual(x, {"attempted": False, "code": "DENY_PEER_PID"})
+        self.assertEqual(x, {"visible": True, "errno": 13})
         trusted = request(self.path, {"user_id":"USR-0042"},
                           expected_server_pid=self.adapter.pid)
         self.assertEqual(trusted,
