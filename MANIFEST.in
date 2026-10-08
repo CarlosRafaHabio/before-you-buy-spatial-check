@@ -3,3 +3,4 @@ include *.md
 recursive-include tests *.py
 recursive-include examples *.py *.json
 recursive-include schemas *.json
+recursive-include prototypes *.py
