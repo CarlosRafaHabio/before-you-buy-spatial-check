@@ -33,6 +33,8 @@ jobs:
           test -n "$SDIST_ROOT"
           test -f "$SDIST_ROOT/prototypes/camel_selective_v0/closed_host_plan.py"
           test -f "$SDIST_ROOT/tests/test_camel_g4b_host_authority_witnesses.py"
+          test -f "$SDIST_ROOT/security_isolation/test_h8_container_boundary.py"
+          test -f "$SDIST_ROOT/security_fuzz/test_flow_security_properties.py"
           cd "$SDIST_ROOT"
           python -m unittest discover -s tests -v
           mkdir -p "$RUNNER_TEMP/rebuilt-wheel"
