@@ -1,48 +1,45 @@
-"""G5-b PRE-FIX negative witnesses. PASS means insecure behavior reproduced.
+"""G5-b post-fix regression and retained negative TCB witnesses.
 
-Do not interpret as proof of security. No real tool, private data or network
-resource is involved. Fix the accidental ordinary-attribute mutation cases
-in a subsequent commit; retain deliberate cross-instance and same-process
-Python bypasses as documented TCB limitations.
+Pre-fix behavior preserved at commit aa76058e915c2078fac19ed698ec95872e2853ad.
+Green tests of direct same-process bypasses do NOT prove isolation.
 """
 import unittest
+from dataclasses import FrozenInstanceError
 
 from prototypes.camel_selective_v0.scoped_data_use_v0 import HostScopedUserLookup
 
 
 class PreFixScopeMutationWitnesses(unittest.TestCase):
-    def test_G5B01_caller_mutates_preapproved_id_by_plain_assignment(self):
+    def test_G5B01_registration_id_reassignment_is_rejected(self):
         calls = []
-        gate = HostScopedUserLookup(
-            approved_user_id="USR-0042",
-            handler=lambda args: calls.append(args),
-        )
-        gate._approved_user_id = "USR-9999"
-        result = gate.invoke("USR-9999")
-        self.assertTrue(result.attempted)  # PRE-FIX UNSAFE
-        self.assertEqual(calls, [("USR-9999",)])
+        gate = HostScopedUserLookup(approved_user_id="USR-0042",
+                                    handler=lambda args: calls.append(args))
+        with self.assertRaises(FrozenInstanceError):
+            gate._approved_user_id = "USR-9999"
+        self.assertEqual(gate.invoke("USR-9999").code, "DENY_OUT_OF_SCOPE")
+        self.assertEqual(gate.invoke("USR-0042").code, "HANDLER_RETURNED")
+        self.assertEqual(calls, [("USR-0042",)])
 
-    def test_G5B02_caller_retargets_handler_by_plain_assignment(self):
-        original, redirected = [], []
-        gate = HostScopedUserLookup(
-            approved_user_id="USR-0042",
-            handler=lambda args: original.append(args),
-        )
-        gate._handler = lambda args: redirected.append(args)
-        self.assertTrue(gate.invoke("USR-0042").attempted)
-        self.assertEqual(original, [])
-        self.assertEqual(redirected, [("USR-0042",)])  # PRE-FIX UNSAFE
+    def test_G5B02_callback_reassignment_is_rejected(self):
+        original, swapped = [], []
+        gate = HostScopedUserLookup(approved_user_id="USR-0042",
+                                    handler=lambda args: original.append(args))
+        with self.assertRaises(FrozenInstanceError):
+            gate._handler = lambda args: swapped.append(args)
+        self.assertEqual(gate.invoke("USR-0042").code, "HANDLER_RETURNED")
+        self.assertEqual(original, [("USR-0042",)])
+        self.assertEqual(swapped, [])
 
-    def test_G5B03_caller_resets_consumed_permission_by_plain_assignment(self):
+    def test_G5B03_plain_assignment_cannot_reset_permission(self):
         calls = []
-        gate = HostScopedUserLookup(
-            approved_user_id="USR-0042",
-            handler=lambda args: calls.append(args),
-        )
+        gate = HostScopedUserLookup(approved_user_id="USR-0042",
+                                    handler=lambda args: calls.append(args))
         self.assertTrue(gate.invoke("USR-0042").attempted)
-        gate._used = False
-        self.assertTrue(gate.invoke("USR-0042").attempted)
-        self.assertEqual(len(calls), 2)  # PRE-FIX UNSAFE
+        with self.assertRaises(FrozenInstanceError):
+            gate._used = False
+        self.assertEqual(gate.invoke("USR-0042").code,
+                         "DENY_REPLAY_PROCESS_LOCAL")
+        self.assertEqual(len(calls), 1)
 
     def test_G5B04_two_independent_gates_allow_two_attempts(self):
         calls = []
@@ -82,6 +79,42 @@ class PreFixScopeMutationWitnesses(unittest.TestCase):
         self.assertTrue(gate.invoke("USR-0042").attempted)
         self.assertEqual(leaked, [captured_host_secret])
         # UNFIXED TCB / callback capability violation, not input-text exploit.
+
+    def test_G5B08_reflection_can_still_mutate_registration(self):
+        calls = []
+        gate = HostScopedUserLookup(approved_user_id="USR-0042",
+                                    handler=lambda args: calls.append(args))
+        object.__setattr__(gate, "_approved_user_id", "USR-9999")
+        self.assertTrue(gate.invoke("USR-9999").attempted)
+        self.assertEqual(calls, [("USR-9999",)])  # NEGATIVE TCB witness
+
+    def test_G5B09_reflection_can_still_reset_nested_state(self):
+        calls = []
+        gate = HostScopedUserLookup(approved_user_id="USR-0042",
+                                    handler=lambda args: calls.append(args))
+        self.assertTrue(gate.invoke("USR-0042").attempted)
+        gate._state.used = False
+        self.assertTrue(gate.invoke("USR-0042").attempted)
+        self.assertEqual(len(calls), 2)  # NEGATIVE TCB witness
+
+    def test_G5B10_unguarded_direct_handler_call_remains_possible(self):
+        calls = []
+        gate = HostScopedUserLookup(approved_user_id="USR-0042",
+                                    handler=lambda args: calls.append(args))
+        gate._handler(("RAW_UNAPPROVED",))
+        self.assertEqual(calls, [("RAW_UNAPPROVED",)])
+        self.assertEqual(gate.invoke("USR-9999").code, "DENY_OUT_OF_SCOPE")
+
+    def test_G5B11_unknown_effect_does_not_auto_retry(self):
+        calls = []
+        def handler(args):
+            calls.append(args)
+            raise RuntimeError("synthetic outcome unknown")
+        gate = HostScopedUserLookup(approved_user_id="USR-0042", handler=handler)
+        self.assertEqual(gate.invoke("USR-0042").code, "HANDLER_OUTCOME_UNKNOWN")
+        self.assertEqual(gate.invoke("USR-0042").code,
+                         "DENY_REPLAY_PROCESS_LOCAL")
+        self.assertEqual(calls, [("USR-0042",)])
 
 
 if __name__ == "__main__":

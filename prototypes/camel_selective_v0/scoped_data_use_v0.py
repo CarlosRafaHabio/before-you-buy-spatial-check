@@ -10,7 +10,7 @@ This is NOT caller authentication, durable replay protection, or a sandbox.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import re
 from threading import Lock
 from typing import Callable
@@ -32,6 +32,15 @@ class LookupOutcome:
     source_untrusted: bool = False
 
 
+class _ProcessLocalAttemptState:
+    """Mutable concurrent state; not a durable authorization service."""
+    __slots__ = ("lock", "used")
+    def __init__(self) -> None:
+        self.lock = Lock()
+        self.used = False
+
+
+@dataclass(frozen=True, slots=True, init=False)
 class HostScopedUserLookup:
     """Exactly one permitted lookup of an independently host-approved USER id.
 
@@ -41,7 +50,10 @@ class HostScopedUserLookup:
     The callback is entirely inside the TCB and is NOT isolated by this object.
     """
 
-    __slots__ = ("_approved_user_id", "_handler", "_used", "_lock")
+    # Frozen against accidental normal reassignment, not Python reflection.
+    _approved_user_id: str = field(repr=False)
+    _handler: Callable[[tuple[str, ...]], None] = field(repr=False)
+    _state: _ProcessLocalAttemptState = field(repr=False, compare=False)
 
     def __init__(
         self,
@@ -56,10 +68,9 @@ class HostScopedUserLookup:
             raise ValueError("Host scope requires a trusted callback.")
         # These bytes come only from independently trusted host bootstrap, never
         # from text extracted from a page, a model response, or user-provided JSON.
-        self._approved_user_id = approved_user_id
-        self._handler = handler
-        self._used = False
-        self._lock = Lock()
+        object.__setattr__(self, "_approved_user_id", approved_user_id)
+        object.__setattr__(self, "_handler", handler)
+        object.__setattr__(self, "_state", _ProcessLocalAttemptState())
 
     @property
     def operation(self) -> str:
@@ -80,10 +91,10 @@ class HostScopedUserLookup:
 
         # Consume before attempting a potentially irrevocable external effect.
         # A failed callback may have acted; never retry automatically.
-        with self._lock:
-            if self._used:
+        with self._state.lock:
+            if self._state.used:
                 return LookupOutcome(False, "DENY_REPLAY_PROCESS_LOCAL")
-            self._used = True
+            self._state.used = True
 
         # This snapshot remains untrusted. We authorize ONE parameter use,
         # not a change of integrity or a reusable host capability.
