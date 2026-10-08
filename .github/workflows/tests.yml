@@ -31,6 +31,8 @@ jobs:
           tar -xzf dist/*.tar.gz -C "$RUNNER_TEMP/sdist"
           SDIST_ROOT="$(find "$RUNNER_TEMP/sdist" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
           test -n "$SDIST_ROOT"
+          test -f "$SDIST_ROOT/prototypes/camel_selective_v0/closed_host_plan.py"
+          test -f "$SDIST_ROOT/tests/test_camel_g4b_host_authority_witnesses.py"
           cd "$SDIST_ROOT"
           python -m unittest discover -s tests -v
           mkdir -p "$RUNNER_TEMP/rebuilt-wheel"
@@ -43,6 +45,7 @@ jobs:
           PY="$RUNNER_TEMP/install-venv/bin/python"
           "$PY" -m pip install --no-deps "$RUNNER_TEMP"/rebuilt-wheel/*.whl
           cd "$RUNNER_TEMP"
+          "$PY" -c "import importlib.util,pathlib,zipfile; ws=list(pathlib.Path('$RUNNER_TEMP/rebuilt-wheel').glob('*.whl')); assert len(ws)==1; z=zipfile.ZipFile(ws[0]); names=z.namelist(); assert any(n.startswith('spatial_check/') for n in names); assert not any(n.startswith(('prototypes/','tests/')) for n in names); assert importlib.util.find_spec('prototypes') is None"
           "$PY" -c "from importlib.metadata import version; import spatial_check; assert version('before-you-buy-spatial-check') == '0.3.1'; assert callable(spatial_check.evaluate)"
           "$PY" -m spatial_check --demo fits > "$RUNNER_TEMP/spatial-check-demo.json"
           "$PY" -c "import json, pathlib; d=json.loads(pathlib.Path('$RUNNER_TEMP/spatial-check-demo.json').read_text()); assert d['status'] == 'NO CONFLICT DETECTED IN PROVIDED DATA'; assert d['execution_mode'] == 'DEMO_ONLY'"
