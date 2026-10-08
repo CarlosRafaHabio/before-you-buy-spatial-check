@@ -6,3 +6,4 @@ recursive-include schemas *.json
 recursive-include prototypes *.py
 recursive-include security_fuzz *.py
 recursive-include security_isolation *.py
+recursive-include security_monty *.py

@@ -35,6 +35,7 @@ jobs:
           test -f "$SDIST_ROOT/tests/test_camel_g4b_host_authority_witnesses.py"
           test -f "$SDIST_ROOT/security_isolation/test_h8_container_boundary.py"
           test -f "$SDIST_ROOT/security_fuzz/test_flow_security_properties.py"
+          test -f "$SDIST_ROOT/security_monty/test_h10_differential.py"
           cd "$SDIST_ROOT"
           python -m unittest discover -s tests -v
           mkdir -p "$RUNNER_TEMP/rebuilt-wheel"
@@ -47,7 +48,7 @@ jobs:
           PY="$RUNNER_TEMP/install-venv/bin/python"
           "$PY" -m pip install --no-deps "$RUNNER_TEMP"/rebuilt-wheel/*.whl
           cd "$RUNNER_TEMP"
-          "$PY" -c "import importlib.util,pathlib,zipfile; ws=list(pathlib.Path('$RUNNER_TEMP/rebuilt-wheel').glob('*.whl')); assert len(ws)==1; z=zipfile.ZipFile(ws[0]); names=z.namelist(); assert any(n.startswith('spatial_check/') for n in names); assert not any(n.startswith(('prototypes/','tests/')) for n in names); assert importlib.util.find_spec('prototypes') is None"
+          "$PY" -c "import importlib.util,pathlib,zipfile; ws=list(pathlib.Path('$RUNNER_TEMP/rebuilt-wheel').glob('*.whl')); assert len(ws)==1; z=zipfile.ZipFile(ws[0]); names=z.namelist(); assert any(n.startswith('spatial_check/') for n in names); assert not any(n.startswith(('prototypes/','tests/','security_monty/','security_isolation/','security_fuzz/')) for n in names); assert importlib.util.find_spec('prototypes') is None"
           "$PY" -c "from importlib.metadata import version; import spatial_check; assert version('before-you-buy-spatial-check') == '0.3.1'; assert callable(spatial_check.evaluate)"
           "$PY" -m spatial_check --demo fits > "$RUNNER_TEMP/spatial-check-demo.json"
           "$PY" -c "import json, pathlib; d=json.loads(pathlib.Path('$RUNNER_TEMP/spatial-check-demo.json').read_text()); assert d['status'] == 'NO CONFLICT DETECTED IN PROVIDED DATA'; assert d['execution_mode'] == 'DEMO_ONLY'"
