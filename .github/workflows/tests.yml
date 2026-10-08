@@ -38,6 +38,9 @@ jobs:
           test -f "$SDIST_ROOT/security_monty/test_h10_differential.py"
           test -f "$SDIST_ROOT/security_monty/test_h12_fixed_bridge.py"
           test -f "$SDIST_ROOT/prototypes/camel_selective_v0/monty_host_bridge_v0.py"
+          test -f "$SDIST_ROOT/prototypes/camel_selective_v0/isolated_broker_v0.py"
+          test -f "$SDIST_ROOT/prototypes/camel_selective_v0/isolated_broker_worker_v0.py"
+          test -f "$SDIST_ROOT/security_monty/test_h13_killable_broker.py"
           cd "$SDIST_ROOT"
           python -m unittest discover -s tests -v
           mkdir -p "$RUNNER_TEMP/rebuilt-wheel"
